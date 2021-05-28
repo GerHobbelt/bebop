@@ -172,4 +172,29 @@ namespace Core.Exceptions
             : base($"Error reading file: {pathToken.Lexeme}.", pathToken.Span, 118)
         { }
     }
+
+    [Serializable]
+    class UnsupportedConstTypeException : SpanException
+    {
+        public UnsupportedConstTypeException(string reason, Span span)
+            : base(reason, span, 119)
+        { }
+    }
+
+    [Serializable]
+    class InvalidLiteralException : SpanException
+    {
+        public InvalidLiteralException(Token token, TypeBase type)
+            : base($"'{token.Lexeme}' is an invalid literal for type {type.AsString}.", token.Span, 120)
+        { }
+    }
+
+    [Serializable]
+    class FieldNameException : SpanException
+    {
+        public FieldNameException(Token token)
+            : base($"Field names cannot be the same as their enclosing type.", token.Span, 121)
+        { }
+    }
+
 }
