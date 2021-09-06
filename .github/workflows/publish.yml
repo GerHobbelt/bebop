@@ -271,8 +271,6 @@ jobs:
         run: |
           sed 's/^version \?= \?.*/version = "${{ steps.dotenv.outputs.version }}"/' Cargo.toml > tmp
           mv tmp Cargo.toml
-          rm -rf bebopc
-          cp -R ../bebopc ./
           cargo package --allow-dirty
 
       - name: Upload Cargo Tools
@@ -341,8 +339,6 @@ jobs:
         run: |
           sed 's/^version \?= \?.*/version = "${{ steps.dotenv.outputs.version }}"/' Cargo.toml > tmp
           mv tmp Cargo.toml
-          rm -rf bebopc
-          cp -R ../bebopc ./
           cargo publish --allow-dirty
         working-directory: ${{env.TOOLS_ROOT}}/cargo
       
