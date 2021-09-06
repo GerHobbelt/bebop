@@ -115,6 +115,8 @@ jobs:
       TS_RUNTIME_ROOT: ${{github.workspace}}/Runtime/TypeScript
       RUST_RUNTIME_ROOT: ${{github.workspace}}/Runtime/Rust
       RUST_TEST_ROOT: ${{github.workspace}}/Laboratory/Rust
+      TOOLS_ROOT: ${{github.workspace}}/Tools
+      BEBOPC_PATH: ${{github.workspace}}/Tools/bebopc
     runs-on: ubuntu-18.04
     needs: build-compiler
     steps:
@@ -158,14 +160,22 @@ jobs:
           profile: minimal
       - name: Cargo Login
         run: cargo login ${{ secrets.CRATES_TOKEN  }}
-          
+      
+      - name: Download Compiler Artifacts
+        uses: actions/download-artifact@v2
+        
+      - name: Extract Compiler Artifacts
+        run: |
+          mkdir ${{github.workspace}}/bin/compiler/Linux-Debug
+          unzip -j -o ./linux-x64/bebopc.zip -d ${{github.workspace}}/bin/compiler/Linux-Debug
+          ls
+      
       # todo: depend on a different job
       - name: Test Rust Runtime
         run: cargo test
         working-directory: ${{ env.RUST_RUNTIME_ROOT }}
       - name: Test Rust Labratory
         run: |
-          cp ./Tools/bebopc/linux/bebopc tools/compiler/Linux-Debug
           cargo check -p auto-testing
           cargo test -p functionality-testing
         working-directory: ${{ env.RUST_TEST_ROOT }}
@@ -175,7 +185,7 @@ jobs:
         run: |
           sed 's/^version \?= \?.*/version = "${{ steps.dotenv.outputs.version }}"/' Cargo.toml > tmp
           mv tmp Cargo.toml
-          cargo package
+          cargo package --allow-dirty
       - name: Upload Rust Runtime
         uses: actions/upload-artifact@v2
         with:
@@ -261,7 +271,7 @@ jobs:
         run: |
           sed 's/^version \?= \?.*/version = "${{ steps.dotenv.outputs.version }}"/' Cargo.toml > tmp
           mv tmp Cargo.toml
-          cargo package
+          cargo package --allow-dirty
 
       - name: Upload Cargo Tools
         uses: actions/upload-artifact@v2
