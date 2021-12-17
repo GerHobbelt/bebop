@@ -13,6 +13,7 @@ jobs:
         with:
           dotnet-version: |
             5.0.x
+            6.0.x
       - name: Build and run tests
         shell: bash
         run: |
