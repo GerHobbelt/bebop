@@ -12,6 +12,8 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: |
+		    4.7.x
+			4.8.x
             5.0.x
             6.0.x
       - name: Build and run tests
