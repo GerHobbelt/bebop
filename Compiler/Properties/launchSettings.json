@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Compiler": {
-      "commandName": "Project",
-      "commandLineArgs": "--version"
+      "commandName": "Project"
     },
     "Generate Test Code": {
       "commandName": "Project",
