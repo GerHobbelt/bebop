@@ -95,7 +95,7 @@ struct Library {
     [JSInvokable]
     public static string GetCompilerVersion()
     {
-        return DotEnv.Generated.Environment.Version;
+        return VersionInfo.Informational;
     }
 
     [JSInvokable]
