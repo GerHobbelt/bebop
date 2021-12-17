@@ -407,7 +407,7 @@ namespace Compiler
                 {
                     return true;
                 }
-                errorMessage = "No command-line flags found.";
+                errorMessage = "No command-line flags found.    Run bebopc with --help to get a list of available flags.";
                 return false;
             }
 
