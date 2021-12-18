@@ -19,11 +19,11 @@
                     /// <summary>
                     /// The MAJOR version of bebopc.
                     /// </summary>
-                    public const byte Major = 0;
+                    public const byte Major = 2;
                     /// <summary>
                     /// The MINOR version of bebopc.
                     /// </summary>
-                    public const byte Minor = 0;
+                    public const byte Minor = 3;
                     /// <summary>
                     /// The PATCH version of bebopc.
                     /// </summary>
@@ -31,6 +31,6 @@
                     /// <summary>
                     /// The human readable version which may contain additional labels.
                     /// </summary>
-                    public const string Informational = "0.0.1-20211218-1534";
+                    public const string Informational = "2.3.1-20211218-1852";
                 }
             }
