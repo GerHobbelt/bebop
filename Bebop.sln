@@ -99,9 +99,11 @@ Global
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Release|x64.ActiveCfg = Windows-Release|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Release|x64.Build.0 = Windows-Release|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Debug|Any CPU.ActiveCfg = Windows-Debug|x64
+		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Debug|Any CPU.Build.0 = Windows-Debug|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Debug|x64.ActiveCfg = Windows-Debug|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Debug|x64.Build.0 = Windows-Debug|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Release|Any CPU.ActiveCfg = Windows-Release|x64
+		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Release|Any CPU.Build.0 = Windows-Release|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Release|x64.ActiveCfg = Windows-Release|x64
 		{A509F5AB-5702-49EC-9B7F-09E8F24FC542}.Windows-Release|x64.Build.0 = Windows-Release|x64
 		{55D1BCCA-9580-4360-8691-959860F1DDDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -161,7 +163,6 @@ Global
 		{01ADDA1C-3024-43FA-821E-BE9056AFF1DF}.Windows-Release|Any CPU.Build.0 = Release|Any CPU
 		{01ADDA1C-3024-43FA-821E-BE9056AFF1DF}.Windows-Release|x64.ActiveCfg = Release|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Linux-Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Linux-Debug|Any CPU.Build.0 = Debug|Any CPU
@@ -176,13 +177,10 @@ Global
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.macOS-Release|Any CPU.Build.0 = Release|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.macOS-Release|x64.ActiveCfg = Release|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Release|x64.ActiveCfg = Release|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Windows-Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Windows-Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Windows-Debug|x64.ActiveCfg = Debug|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Windows-Release|Any CPU.ActiveCfg = Release|Any CPU
-		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Windows-Release|Any CPU.Build.0 = Release|Any CPU
 		{99A2C36B-10D5-4AE7-8F84-6BCB67D200AD}.Windows-Release|x64.ActiveCfg = Release|Any CPU
 		{AAF5AB28-ED41-47A0-B422-BE1E6F77844C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AAF5AB28-ED41-47A0-B422-BE1E6F77844C}.Debug|Any CPU.Build.0 = Debug|Any CPU
