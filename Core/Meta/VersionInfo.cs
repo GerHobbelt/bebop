@@ -31,6 +31,6 @@
                     /// <summary>
                     /// The human readable version which may contain additional labels.
                     /// </summary>
-                    public const string Informational = "2.3.1-20211218-1852";
+                    public const string Informational = "2.3.1-20220103-2049";
                 }
             }
