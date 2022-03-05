@@ -93,4 +93,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>true</Optimize>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Schemas\RpcDatagram.bop" />
+    <EmbeddedResource Include="Schemas\RpcDatagram.bop" />
+  </ItemGroup>
+
 </Project>
