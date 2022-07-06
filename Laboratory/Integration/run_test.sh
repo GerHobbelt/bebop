@@ -23,7 +23,7 @@ echo "Testing that all implementations can decode all encodings..."
 # rust first because it has the most useful errors
 #cargo run --manifest-path Rust/Cargo.toml -q --example decode -- rs.enc || fail "Rust decode failed."
 #cargo run --manifest-path Rust/Cargo.toml -q --example decode -- cs.enc || fail "Rust failed to decode decode c#."
-##cargo run --manifest-path Rust/Cargo.toml -q --example decode -- ts.enc || fail "Rust failed to decode decode ts."
+#cargo run --manifest-path Rust/Cargo.toml -q --example decode -- ts.enc || fail "Rust failed to decode decode ts."
 #cargo run --manifest-path Rust/Cargo.toml -q --example decode -- cpp.enc || fail "Rust failed to decode decode c++."
 
 dotnet run decode cs.enc || fail "C# decode failed."
