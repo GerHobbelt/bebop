@@ -97,10 +97,12 @@ impl<'raw> SubRecord<'raw> for &'raw str {
 
     fn _deserialize_chained(raw: &'raw [u8]) -> DeResult<(usize, Self)> {
         let len = read_len(raw)?;
-        let raw_str = &raw[LEN_SIZE..len + LEN_SIZE];
-        if raw_str.len() < len {
-            return Err(DeserializeError::MoreDataExpected(len - raw_str.len()));
+        if len + LEN_SIZE > raw.len() {
+            return Err(DeserializeError::MoreDataExpected(
+                len + LEN_SIZE - raw.len(),
+            ));
         }
+        let raw_str = &raw[LEN_SIZE..len + LEN_SIZE];
         #[cfg(not(feature = "unchecked"))]
         {
             Ok((len + LEN_SIZE, std::str::from_utf8(raw_str)?))
@@ -110,6 +112,13 @@ impl<'raw> SubRecord<'raw> for &'raw str {
             Ok((len + LEN_SIZE, std::str::from_utf8_unchecked(raw_str)))
         }
     }
+}
+
+#[test]
+fn out_of_bounds_string() {
+    let buf = [100, 100, 100, 100, 100, 100];
+    let result = <&str>::_deserialize_chained(&buf);
+    assert!(result.is_err());
 }
 
 impl<'raw> SubRecord<'raw> for String {
@@ -164,7 +173,8 @@ where
         let mut i = LEN_SIZE;
         let mut v = Vec::with_capacity(len);
         for _ in 0..len {
-            let (read, t) = T::_deserialize_chained(&raw[i..])?;
+            let slice = &raw.get(i..).ok_or(DeserializeError::CorruptFrame)?;
+            let (read, t) = T::_deserialize_chained(slice)?;
             i += read;
             v.push(t);
         }
@@ -194,6 +204,13 @@ test_serialization!(
     12 + LEN_SIZE
 );
 test_serialization!(serialization_vec_empty_i16, Vec<i16>, Vec::new(), LEN_SIZE);
+
+#[test]
+fn out_of_bounds_array() {
+    let buf = [100, 100, 100, 100, 100, 100];
+    let result = Vec::<u32>::_deserialize_chained(&buf);
+    assert!(result.is_err());
+}
 
 #[cfg(feature = "sorted_maps")]
 pub trait SubRecordHashMapKey<'raw>: SubRecord<'raw> + Eq + Hash + Ord {}
@@ -260,9 +277,11 @@ where
         let mut i = LEN_SIZE;
         let mut m = HashMap::with_capacity(len);
         for _ in 0..len {
-            let (read, k) = K::_deserialize_chained(&raw[i..])?;
+            let (read, k) =
+                K::_deserialize_chained(&raw.get(i..).ok_or(DeserializeError::CorruptFrame)?)?;
             i += read;
-            let (read, v) = V::_deserialize_chained(&raw[i..])?;
+            let (read, v) =
+                V::_deserialize_chained(&raw.get(i..).ok_or(DeserializeError::CorruptFrame)?)?;
             i += read;
             m.insert(k, v);
         }
@@ -295,14 +314,10 @@ impl<'raw> SubRecord<'raw> for Guid {
 
     #[inline]
     fn _deserialize_chained(raw: &'raw [u8]) -> DeResult<(usize, Self)> {
-        Ok((
-            16,
-            Guid::from_ms_bytes(
-                raw[0..16]
-                    .try_into()
-                    .map_err(|_| DeserializeError::MoreDataExpected(16 - raw.len()))?,
-            ),
-        ))
+        if raw.len() < 16 {
+            return Err(DeserializeError::MoreDataExpected(16 - raw.len()));
+        }
+        Ok((16, Guid::from_ms_bytes(raw[0..16].try_into().unwrap())))
     }
 }
 
@@ -315,6 +330,13 @@ test_serialization!(
     ]),
     16
 );
+
+#[test]
+fn out_of_bounds_guid() {
+    let buf = [100, 100, 100, 100, 100, 100];
+    let result = Guid::_deserialize_chained(&buf);
+    assert!(result.is_err());
+}
 
 impl<'raw> SubRecord<'raw> for Date {
     const MIN_SERIALIZED_SIZE: usize = Self::SERIALIZED_SIZE;
@@ -428,6 +450,13 @@ test_serialization!(
 );
 
 #[test]
+fn out_of_bounds_slice_wrapper() {
+    let buf = [100, 100, 100, 100, 100, 100];
+    let result = SliceWrapper::<u8>::_deserialize_chained(&buf);
+    assert!(result.is_err());
+}
+
+#[test]
 fn serialization_slicewrapper_i16_cooked() {
     let mut buf = Vec::new();
     const LEN: usize = 10 + LEN_SIZE;
@@ -462,15 +491,14 @@ macro_rules! impl_record_for_num {
 
             #[inline]
             fn _deserialize_chained(raw: &'raw [u8]) -> DeResult<(usize, Self)> {
+                if raw.len() < core::mem::size_of::<$t>() {
+                    return Err(DeserializeError::MoreDataExpected(
+                        core::mem::size_of::<$t>() - raw.len(),
+                    ));
+                }
                 Ok((
                     core::mem::size_of::<$t>(),
-                    <$t>::from_le_bytes(raw[0..core::mem::size_of::<$t>()].try_into().map_err(
-                        |_| {
-                            DeserializeError::MoreDataExpected(
-                                core::mem::size_of::<$t>() - raw.len(),
-                            )
-                        },
-                    )?),
+                    <$t>::from_le_bytes(raw[0..core::mem::size_of::<$t>()].try_into().unwrap()),
                 ))
             }
         }
