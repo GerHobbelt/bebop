@@ -61,15 +61,40 @@ jobs:
 
       - name: Build bebopc
         run: |
-          dotnet publish -c ${{env.CONFIGURATION}} -r ${{matrix.IDENTIFIER}}-x64 -p:ReleaseVersion=${{ steps.dotenv.outputs.version }} --self-contained
-          dotnet publish -c ${{env.CONFIGURATION}} -r ${{matrix.IDENTIFIER}}-arm64 -p:ReleaseVersion=${{ steps.dotenv.outputs.version }} --self-contained
+          dotnet publish -c ${{env.CONFIGURATION}} -r ${{matrix.IDENTIFIER}}-x64 -p:ReleaseVersion=${{ steps.dotenv.outputs.version }} -p:PublishTrimmed=false -p:PublishSingleFile=true --self-contained
+          dotnet publish -c ${{env.CONFIGURATION}} -r ${{matrix.IDENTIFIER}}-arm64 -p:ReleaseVersion=${{ steps.dotenv.outputs.version }} -p:PublishTrimmed=false -p:PublishSingleFile=true --self-contained
         working-directory: ./Compiler/
 
       - if: matrix.os == 'macos-latest'
-        name: ZIP macOS Build
+        name: Import Code-Signing Certificates
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          # The certificates in a PKCS12 file encoded as a base64 string
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+          # The password used to import the PKCS12 file.
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+
+      - if: matrix.os == 'macos-latest'
+        name: Install gon via HomeBrew for Code Signing and App Notarization
         run: |
-          zip -j ${{env.BUILD_ZIP_ARTIFACT_X86_64}} ${{env.BUILD_ARTIFACT_X86_64}}
-          zip -j ${{env.BUILD_ZIP_ARTIFACT_ARM64}} ${{env.BUILD_ARTIFACT_ARM64}}
+          brew install mitchellh/gon/gon
+
+      - if: matrix.os == 'macos-latest'
+        name: Sign and zip macOS Binary
+        env:
+          AC_USERNAME: ${{ secrets.AC_USERNAME }}
+          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+        run: |
+          gon -log-level=trace -log-json ./gon-x64.json
+          unzip -j -o ./notarized-osx-x64.zip
+          rm -f ./notarized-osx-x64.zip
+          zip -j ${{env.BUILD_ZIP_ARTIFACT_X86_64}} ./bebopc
+          rm -f ./bebopc
+          gon -log-level=trace -log-json ./gon-arm64.json
+          unzip -j -o ./notarized-osx-arm64.zip
+          rm -f ./notarized-osx-arm64.zip
+          zip -j ${{env.BUILD_ZIP_ARTIFACT_ARM64}} ./bebopc
+          rm -f ./bebopc
 
       - if: matrix.os == 'ubuntu-18.04'
         name: ZIP Linux Build
