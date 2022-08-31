@@ -1,3 +1,5 @@
+#[allow(unaligned_references)]
+
 pub use bitflags::bitflags;
 
 pub use serialization::*;

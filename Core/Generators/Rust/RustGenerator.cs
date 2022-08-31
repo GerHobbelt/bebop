@@ -285,6 +285,7 @@ namespace Core.Generators.Rust
                     .AppendLine($"fn serialized_size(&self) -> usize {{ ::std::mem::size_of::<{type}>() }}")
                     .AppendLine()
                     .AppendLine("#[inline]")
+                    .AppendLine("#[allow(unaligned_references)]")
                     .CodeBlock(
                         "fn _serialize_chained<W: ::std::io::Write>(&self, dest: &mut W) -> ::bebop::SeResult<usize>",
                         _tab,
@@ -464,7 +465,7 @@ namespace Core.Generators.Rust
                     })
                     .AppendLine();
 
-                bldr.CodeBlock(
+                    bldr.AppendLine("#[allow(unaligned_references)]").CodeBlock(
                         "fn _serialize_chained<W: ::std::io::Write>(&self, dest: &mut W) -> ::bebop::SeResult<usize>",
                         _tab, () =>
                         {
@@ -604,6 +605,7 @@ namespace Core.Generators.Rust
                             WriteMessageSizeBound(builder, d);
                         })
                         .AppendLine()
+                        .AppendLine("#[allow(unaligned_references)]")
                         .CodeBlock(
                             "fn _serialize_chained<W: ::std::io::Write>(&self, dest: &mut W) -> ::bebop::SeResult<usize>",
                             _tab, () =>
@@ -921,7 +923,8 @@ namespace Core.Generators.Rust
                     });
                 }).AppendLine();
 
-                builder.CodeBlock(
+
+                builder.AppendLine("#[allow(unaligned_references)]").CodeBlock(
                     "fn _serialize_chained<W: ::std::io::Write>(&self, dest: &mut W) -> ::bebop::SeResult<usize>",
                     _tab, () =>
                     {

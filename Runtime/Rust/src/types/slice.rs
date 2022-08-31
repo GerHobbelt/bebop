@@ -208,6 +208,7 @@ mod test {
 
         fn _serialize_chained<W: Write>(&self, dest: &mut W) -> SeResult<usize> {
             self.a._serialize_chained(dest)?;
+            #[allow(unaligned_references)]
             self.b._serialize_chained(dest)?;
             Ok(9)
         }
@@ -257,6 +258,7 @@ mod test {
     }
 
     #[test]
+    #[allow(unaligned_references)]
     fn get_raw_fixed_struct() {
         // only happens for big-endian systems or systems where `repr(packed)` is not supported
         let s = <SliceWrapper<Fixed>>::Raw(&[0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
@@ -282,6 +284,7 @@ mod test {
     }
 
     #[test]
+    #[allow(unaligned_references)]
     fn iter_raw() {
         let s = <SliceWrapper<Fixed>>::Raw(&[
             0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x04, 0x00, 0x00, 0x00,

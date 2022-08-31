@@ -3,9 +3,9 @@ use bebop_tools::BuildConfig;
 use std::path::PathBuf;
 
 #[cfg(windows)]
-const BEBOP_BIN: &str = "../../../bin/compiler/Windows-Debug/bebopc.exe";
+const BEBOP_BIN: &str = "../../../bin/compiler/Debug/artifacts/bebopc.exe";
 #[cfg(unix)]
-const BEBOP_BIN: &str = "../../../bin/compiler/Linux-Debug/bebopc";
+const BEBOP_BIN: &str = "../../../bin/compiler/Debug/artifacts/bebopc";
 
 fn main() {
     unsafe {
