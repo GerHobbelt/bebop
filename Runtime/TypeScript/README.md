@@ -2,9 +2,9 @@
 
 [![npm version](https://img.shields.io/npm/v/bebop.svg)](https://www.npmjs.com/package/bebop)
 [![npm downloads](https://img.shields.io/npm/dm/bebop.svg)](https://www.npmjs.com/package/bebop)
-[![GitHub license](https://img.shields.io/github/license/betwixt-labs/bebop.svg)](https://github.com/betwixt-labs/bebop/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/6over3/bebop.svg)](https://github.com/6over3/bebop/blob/main/LICENSE)
 
-The official [Bebop](https://github.com/betwixt-labs/bebop) runtime for TypeScript and JavaScript.
+The official [Bebop](https://github.com/6over3/bebop) runtime for TypeScript and JavaScript.
 
 ## Overview
 

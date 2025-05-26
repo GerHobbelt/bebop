@@ -17,13 +17,13 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "homepage": "https://github.com/betwixt-labs/bebop",
+  "homepage": "https://github.com/6over3/bebop",
   "bugs": {
-    "url": "https://github.com/betwixt-labs/bebop/issues"
+    "url": "https://github.com/6over3/bebop/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/betwixt-labs/bebop.git",
+    "url": "https://github.com/6over3/bebop.git",
     "directory": "Runtime/TypeScript"
   },
   "scripts": {

@@ -9,8 +9,8 @@
   <h1>Bebop</h1>
   <h3>No ceremony, just code.<br/> Blazing fast, typesafe binary serialization.</h3>
 
-  <a href="https://github.com/betwixt-labs/bebop/blob/main/LICENSE.txt">
-    <img alt="Apache License" src="https://img.shields.io/github/license/betwixt-labs/bebop" />
+  <a href="https://github.com/6over3/bebop/blob/main/LICENSE.txt">
+    <img alt="Apache License" src="https://img.shields.io/github/license/6over3/bebop" />
   </a>
   <a href="https://discord.gg/jVfz9sMPWv">
     <img alt="Discord" src="https://img.shields.io/discord/1102669305537110036?color=7389D8&label&logo=discord&logoColor=ffffff" />

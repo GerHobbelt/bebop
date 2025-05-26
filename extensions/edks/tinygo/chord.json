@@ -4,11 +4,11 @@
   "private": false,
   "description": "A template for chords built with tinygo",
   "version": "1.0.0",
-  "repository": "https://github.com/betwixt-labs/bebopc",
+  "repository": "https://github.com/6over3/bebopc",
   "license": "Apache-2.0",
   "author": {
-    "name": "Betwixt Labs",
-    "email": "code@betwixtlabs.com"
+    "name": "6over3",
+    "email": "code@6over3.com"
   },
   "bin": "build/main.wasm",
   "build": {

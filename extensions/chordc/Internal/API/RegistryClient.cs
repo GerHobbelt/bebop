@@ -8,7 +8,7 @@ namespace Chord.Compiler.Internal.API;
 
 internal sealed partial class RegistryClient : IDisposable
 {
-    private const string RegistryUrl = "https://console.betwixtlabs.com";
+    private const string RegistryUrl = "https://blc.6over3.com";
 
     private readonly HttpClientHandler _httpClientHandler;
     private readonly HttpClient _httpClient;

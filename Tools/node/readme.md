@@ -4,7 +4,7 @@ Official toolkit for Bebop - Blazing fast, typesafe binary serialization.
 
 [![npm version](https://img.shields.io/npm/v/bebop-tools.svg)](https://www.npmjs.com/package/bebop-tools)
 [![npm downloads](https://img.shields.io/npm/dm/bebop-tools.svg)](https://www.npmjs.com/package/bebop-tools)
-[![GitHub license](https://img.shields.io/github/license/betwixt-labs/bebop.svg)](https://github.com/betwixt-labs/bebop/blob/master/LICENSE.TXT)
+[![GitHub license](https://img.shields.io/github/license/6over3/bebop.svg)](https://github.com/6over3/bebop/blob/master/LICENSE.TXT)
 
 ## Overview
 

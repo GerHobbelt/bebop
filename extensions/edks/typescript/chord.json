@@ -3,11 +3,11 @@
   "private": false,
   "description": "A template for chords built with TypeScript",
   "version": "1.0.1",
-  "repository": "https://github.com/betwixt-labs/bebop",
+  "repository": "https://github.com/6over3/bebop",
   "license": "Apache-2.0",
   "author": {
-    "name": "Betwixt Labs",
-    "email": "code@betwixtlabs.com"
+    "name": "6over3",
+    "email": "code@6over3.com"
   },
   "bin": "dist/index.wasm",
   "build": {

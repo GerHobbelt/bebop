@@ -19,9 +19,9 @@ export default defineConfig({
       },
 
       social: {
-        github: "https://github.com/betwixt-labs/bebop",
+        github: "https://github.com/6over3/bebop",
         discord: "https://discord.gg/jVfz9sMPWv",
-        twitter: "https://twitter.com/BetwixtLabs",
+        twitter: "https://twitter.com/6over3",
       },
 
       defaultLocale: "root",
