@@ -1,12 +1,9 @@
-import { BebopView, Guid } from 'bebop';
-import { BasicArrays, IBasicArrays, TestInt32Array } from './generated/gen';
-import * as assert from "assert";
-if (typeof require !== 'undefined') {
-    if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
-}
+import { BebopView } from 'bebop';
+import { BasicArrays, TestInt32Array } from './generated/gen';
+import { it, expect } from 'vitest';
 
 it("Basic array types roundtrip", () => {
-    const obj: IBasicArrays = {
+    const obj = BasicArrays({
         a_bool: [true, false],
         a_byte: Uint8Array.from([1, 11, 111]),
         a_int16: [2, 22, 222],
@@ -18,11 +15,11 @@ it("Basic array types roundtrip", () => {
         a_float32: [8, 88, 888],
         a_float64: [9, 99, 999],
         a_string: ['hello world', 'goodbye world'],
-        a_guid: [Guid.parseGuid('01234567-0123-0123-0123-0123456789ab'), Guid.parseGuid('ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb')],
-    };
+        a_guid: ['01234567-0123-0123-0123-0123456789ab', 'ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb'],
+    });
     const bytes = BasicArrays.encode(obj);
     const obj2 = BasicArrays.decode(bytes);
-    expect(obj).toEqual(obj2);
+    expect(JSON.stringify(obj, (_, v) => typeof v === 'bigint' ? v.toString() : v)).toEqual(JSON.stringify(obj2, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 });
 
 it("Long int array roundtrip", () => {
@@ -30,5 +27,5 @@ it("Long int array roundtrip", () => {
     const bytes = TestInt32Array.encode(obj);
     const obj2 = TestInt32Array.decode(bytes);
     expect(obj2.a.length).toEqual(100_000);
-    expect(obj).toEqual(obj2);
+    expect(JSON.stringify(obj)).toEqual(JSON.stringify(obj2));
 })

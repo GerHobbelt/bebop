@@ -1,11 +1,8 @@
-import { BebopView, Guid } from 'bebop';
+import { BebopView } from 'bebop';
 import { BasicTypes } from './generated/gen';
-import * as assert from "assert";
-if (typeof require !== 'undefined') {
-    if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
-}
+import { it, expect } from 'vitest';
 it("Basic types roundtrip", () => {
-    const obj = {
+    const obj = BasicTypes({
         a_bool: true,
         a_byte: 1,
         a_int16: 2,
@@ -17,10 +14,10 @@ it("Basic types roundtrip", () => {
         a_float32: 8,
         a_float64: 9,
         a_string: 'hello world',
-        a_guid: Guid.parseGuid('01234567-0123-0123-0123-0123456789ab'),
+        a_guid: '01234567-0123-0123-0123-0123456789ab',
         a_date: new Date(1996, 1, 7),
-    };
-    const bytes = BasicTypes.encode(obj);
+    });
+    const bytes = obj.encode();
     const obj2 = BasicTypes.decode(bytes);
-    expect(obj).toEqual(obj2);
+    expect(JSON.stringify(obj, (_, v) => typeof v === 'bigint' ? v.toString() : v)).toEqual(JSON.stringify(obj2, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 });

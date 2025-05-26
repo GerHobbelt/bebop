@@ -1,4 +1,4 @@
-import { BebopRuntimeError, BinarySchema, Guid, BebopJson } from "./index";
+import { BebopRuntimeError, BinarySchema} from "./index";
 
 import { describe, expect, it } from "vitest";
 
@@ -38,7 +38,6 @@ describe("binary schema", () => {
   it("can read", () => {
     schema.get();
     const ast = schema.ast;
-    console.log(JSON.stringify(ast, BebopJson.replacer, 2));
 
     expect(ast).toBeDefined();
     expect(ast.bebopVersion).toBe(3);
@@ -49,9 +48,9 @@ describe("binary schema", () => {
       "DefaultResponse",
       "ErrorResponse",
     ]);
-    expect(ast.definitions["ApiResponse"]).toBeDefined();
-    expect(ast.definitions["ApiResponse"].kind).toBe(3);
-    expect(ast.definitions["Rights"]["members"]).keys([
+    expect(ast.definitions.ApiResponse).toBeDefined();
+    expect(ast.definitions.ApiResponse.kind).toBe(3);
+    expect(ast.definitions.Rights["members"]).keys([
       "Default",
       "User",
       "Mod",
@@ -62,24 +61,22 @@ describe("binary schema", () => {
   it("can read a record using the schema", () => {
     const record = schema.reader.read("ApiResponse", recordData);
     expect(record).toBeDefined();
-    expect(record["discriminator"]).toBe(1);
-    expect(record["value"]).keys(["rights", "username"]);
-    const value = record["value"] as Record<string, unknown>;
-    expect(value["rights"]).toBe(3);
-    expect(value["username"]).toBe("test");
+    expect(record.discriminator).toBe(1);
+    expect(record.value).keys(["rights", "username"]);
+    const value = record.value as Record<string, unknown>;
+    expect(value.rights).toBe(3);
+    expect(value.username).toBe("test");
   });
 
   it("can read a record with guid using the schema", () => {
     const record = schema.reader.read("ApiResponse", recordData2);
     expect(record).toBeDefined();
-    expect(record["discriminator"]).toBe(2);
-    expect(record["value"]).keys(["code", "reason", "id"]);
-    const value = record["value"] as Record<string, unknown>;
-    expect(value["code"]).toBe(500);
-    expect(value["reason"]).toBe("failure");
-    expect(value["id"]).toStrictEqual(
-      Guid.parseGuid("97e2760d-f8e4-434f-a7ee-35df85b043d1")
-    );
+    expect(record.discriminator).toBe(2);
+    expect(record.value).keys(["code", "reason", "id"]);
+    const value = record.value as Record<string, unknown>;
+    expect(value.code).toBe(500);
+    expect(value.reason).toBe("failure");
+    expect(value.id).toStrictEqual("97e2760d-f8e4-434f-a7ee-35df85b043d1");
   });
 
   it("can write a record using the schema", () => {

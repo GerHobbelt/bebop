@@ -47,14 +47,32 @@ pub trait Record<'raw>: SubRecord<'raw> {
     /// # Example
     ///
     /// ```rust
+    /// # use std::io::Write;
+    /// # // Mock types for documentation example
+    /// # struct MyFixedSizeType;
+    /// # impl MyFixedSizeType {
+    /// #     const SERIALIZED_SIZE: usize = 16;
+    /// #     fn serialize<W: Write>(&self, dest: &mut W) -> Result<usize, std::io::Error> {
+    /// #         Ok(16)
+    /// #     }
+    /// # }
     /// // For fixed-size types
-    /// let value: MyFixedSizeType = /* ... */;
+    /// let value = MyFixedSizeType;
     /// let mut buf = Vec::with_capacity(MyFixedSizeType::SERIALIZED_SIZE);
     /// let bytes_written = value.serialize(&mut buf).unwrap();
     /// ```
     /// ```rust
+    /// # use std::io::Write;
+    /// # // Mock types for documentation example
+    /// # struct MyVariableSizeType;
+    /// # impl MyVariableSizeType {
+    /// #     fn serialized_size(&self) -> usize { 32 }
+    /// #     fn serialize<W: Write>(&self, dest: &mut W) -> Result<usize, std::io::Error> {
+    /// #         Ok(32)
+    /// #     }
+    /// # }
     /// // For variable-size types
-    /// let value: MyVariableSizeType = /* ... */;
+    /// let value = MyVariableSizeType;
     /// let size = value.serialized_size();
     /// let mut buf = Vec::with_capacity(size);
     /// let bytes_written = value.serialize(&mut buf).unwrap();

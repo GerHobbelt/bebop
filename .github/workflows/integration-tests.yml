@@ -11,14 +11,13 @@ jobs:
     env:
       TEST_ROOT: ${{github.workspace}}/Laboratory/Integration
       RUNTIME_ROOT: ${{github.workspace}}/Runtime/C#
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 9.0.x
-          dotnet-quality: 'preview'
           
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -32,7 +31,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v1
         with:
-          node-version: "20.15.0" # LTS
+          node-version: "24.1.0" # LTS
       - name: Setup C++
         run: |
           sudo apt update

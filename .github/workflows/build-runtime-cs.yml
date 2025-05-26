@@ -25,9 +25,8 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            8.0.x
-            9.0.x
-          dotnet-quality: 'preview'
+            8.0.410
+            9.0.300
       - name: Generate Output.g.cs
         working-directory: "./Laboratory/C#"
         run: dotnet run --project ../../Compiler/ --include $(ls -p ../Schemas/Valid/*.bop | tr '\n' ' ') build --generator "cs:./GeneratedTestCode/Output.g.cs,namespace=Bebop.Codegen"

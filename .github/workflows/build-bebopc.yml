@@ -56,16 +56,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install clang zlib1g-dev libkrb5-dev libtinfo5
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.410"
+
       - if: matrix.os == 'ubuntu-22.04' && matrix.BUILD_WASI
         name: Install WASI Dependencies
         run: ./install-wasi.sh
         working-directory: ./scripts/
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: "8.0.x"
-          dotnet-quality: "preview"
+          
       - name: Restore Solution
         run: dotnet restore
 

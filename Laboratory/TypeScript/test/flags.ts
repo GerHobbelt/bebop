@@ -1,7 +1,5 @@
 import * as G from './generated/gen';
-if (typeof require !== 'undefined') {
-    if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
-}
+import { it, expect } from 'vitest';
 it("Supports flag enums", () => {
     // TypeScript already had no problem with using enums as numbers, so there
     // is not much to test here. Here's a sanity check:
