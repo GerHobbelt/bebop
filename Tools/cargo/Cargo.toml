@@ -9,7 +9,7 @@ readme = "../../README.md"
 license = "Apache-2.0"
 keywords = ["binary", "encode", "decode", "serialization", "schema"]
 categories = ["encoding"]
-repository = "https://github.com/betwixt-labs/bebop"
+repository = "https://github.com/6over3/bebop"
 homepage = "https://docs.bebop.sh"
 
 [lib]

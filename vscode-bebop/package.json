@@ -4,11 +4,11 @@
   "displayName": "Bebop Schema",
   "description": "Language support for the Bebop schema language.",
   "bugs": {
-    "url": "https://github.com/betwixt-labs/bebop/issues"
+    "url": "https://github.com/6over3/bebop/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/betwixt-labs/bebop"
+    "url": "https://github.com/6over3/bebop"
   },
   "icon": "images/icon.png",
   "license": "Apache License, Version 2.0",

@@ -13,13 +13,13 @@
     <VersionPrefix Condition="'$(ReleaseVersion)' == ''">0.0.1</VersionPrefix>
     <VersionSuffix Condition="'$(ReleaseVersion)' == ''">$([System.DateTime]::UtcNow.ToString(`yyyyMMdd-HHmm`))</VersionSuffix>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/betwixt-labs/bebop</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/6over3/bebop</PackageProjectUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DocumentationFile>./bin/$(AssemblyName).xml</DocumentationFile>
     <IncludeContentInPack>true</IncludeContentInPack>
     <Company></Company>
     <PackageIcon>128.png</PackageIcon>
-    <RepositoryUrl>https://github.com/betwixt-labs/bebop.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/6over3/bebop.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>binary serialization bebop encoding decoding</PackageTags>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
