@@ -13,7 +13,7 @@
   "icon": "images/icon.png",
   "license": "Apache License, Version 2.0",
   "version": "0.0.1",
-  "author": "Betwixt Labs",
+  "author": "6over3",
   "pricing": "Free",
   "engines": {
     "vscode": "^1.66.0"

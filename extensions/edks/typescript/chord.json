@@ -6,7 +6,7 @@
   "repository": "https://github.com/6over3/bebop",
   "license": "Apache-2.0",
   "author": {
-    "name": "Betwixt Labs",
+    "name": "6over3",
     "email": "code@6over3.com"
   },
   "bin": "dist/index.wasm",
