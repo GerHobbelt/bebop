@@ -1,8 +1,6 @@
 import * as fs from 'fs';
 import { Library } from './generated/gen';
-if (typeof require !== 'undefined') {
-    if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
-}
+import { it, expect } from 'vitest';
 it('can parse Library from binary file', () => {
     const buffer = fs.readFileSync('test/jazz-library.bin');
     const library = Library.decode(buffer);

@@ -1,7 +1,5 @@
 import * as G from './generated/gen';
-if (typeof require !== 'undefined') {
-    if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
-}
+import { it, expect } from 'vitest';
 it("Supports enum sizes", () => {
     expect(G.SmallEnum.B).toEqual(255);
     expect(typeof(G.SmallEnum.B)).toEqual("number");

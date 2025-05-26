@@ -1,8 +1,6 @@
 import { BebopView } from 'bebop';
 import * as G from './generated/gen';
-if (typeof require !== 'undefined') {
-    if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
-}
+import { it, expect } from 'vitest';
 it("Constants are generated", () => {
     expect(G.exampleConstInt32).toEqual(-123);
     expect(G.exampleConstUint64).toEqual(0x123ffffffffn);
