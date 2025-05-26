@@ -13,8 +13,7 @@ jobs:
       - uses: dart-lang/setup-dart@v1
       - uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "8.0.x" # SDK Version to use; x will use the latest version of the 7.0 channel
-          dotnet-quality: 'preview'
+          dotnet-version: "8.0.410" # SDK Version to use; x will use the latest version of the 7.0 channel
       - name: Build and run tests
         run: |
           mkdir gen

@@ -1,6 +1,5 @@
 import { BebopView} from 'bebop';
 import {  SomeMaps } from './generated/gen';
-import * as assert from "assert";
 if (typeof require !== 'undefined') {
     if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
 }

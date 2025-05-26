@@ -76,8 +76,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "8.0.x"
-          dotnet-quality: "preview"
+          dotnet-version: "8.0.410"
 
       - name: Build bebopc
         run: |
@@ -193,9 +192,8 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
-            8.0.x
-            9.0.x
-          dotnet-quality: 'preview'
+            8.0.410
+            9.0.300
 
       - name: Test .NET Runtime
         run: |
@@ -424,8 +422,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: "8.0.x" # SDK Version to use; x will use the latest version of the 7.0 channel
-          include-prerelease: true
+          dotnet-version: "8.0.410" # SDK Version to use; x will use the latest version of the 7.0 channel
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1

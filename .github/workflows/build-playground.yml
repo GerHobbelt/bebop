@@ -21,7 +21,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: "8.0.410"
-          dotnet-quality: 'preview'
       - name: Build Playground
         run: |
           ../scripts/install-wasi.sh
