@@ -1,6 +1,5 @@
-import { BebopView, Guid } from 'bebop';
+import { BebopView } from 'bebop';
 import { BasicTypes } from './generated/gen';
-import * as assert from "assert";
 if (typeof require !== 'undefined') {
     if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
 }
@@ -17,7 +16,7 @@ it("Basic types roundtrip", () => {
         a_float32: 8,
         a_float64: 9,
         a_string: 'hello world',
-        a_guid: Guid.parseGuid('01234567-0123-0123-0123-0123456789ab'),
+        a_guid: '01234567-0123-0123-0123-0123456789ab',
         a_date: new Date(1996, 1, 7),
     };
     const bytes = BasicTypes.encode(obj);

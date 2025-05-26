@@ -1,383 +1,436 @@
-import exp from "constants";
-import {
-  BebopTypeGuard,
-  BebopRuntimeError,
-  BebopJson,
-  GuidMap,
-  Guid,
-} from "./index";
+import { BebopView, BebopRuntimeError, readGuid } from "./index";
+import { describe, expect, it, beforeEach } from "vitest";
 
-import { describe, expect, it } from "vitest";
+describe("BebopView", () => {
+  let view: BebopView;
 
-describe("BebopJson", () => {
-  describe("replace/revive", () => {
-    it("should support BigInt values", () => {
-      const obj = { bigInt: BigInt(Number.MAX_SAFE_INTEGER) + 1n };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver);
-      expect(parsedObj.bigInt).toEqual(obj.bigInt);
-    });
+  beforeEach(() => {
+    view = BebopView.getInstance();
+  });
 
-    it("should support Map values", () => {
-      const obj = { map: new Map([["key", "value"]]) };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver);
-      expect(parsedObj.map.get("key")).toEqual("value");
-    });
-
-    it("should support GuidMap", () => {
-      const guid = Guid.newGuid();
-      const obj = { map: new GuidMap([[guid, "value"]]) };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver) as typeof obj;
-      expect(parsedObj.map.get(guid)).toEqual("value");
-    });
-
-    it("should support Uint8Array values", () => {
-      const obj = { uint8: new Uint8Array([0, 1, 2, 3]) };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver);
-      expect(parsedObj.uint8).toEqual(obj.uint8);
-    });
-
-    it("should support a complex object with multiple types", () => {
-      const guid = Guid.newGuid();
-      const obj = {
-        bigInt: BigInt(Number.MAX_SAFE_INTEGER) + 1n,
-        nestedObj: {
-          bigInt: BigInt(Number.MAX_SAFE_INTEGER) + 1n,
-        },
-        map: new Map([["key", "value"]]),
-        nestedMap: new Map([["key", new GuidMap([[guid, "value"]])]]),
-        date: new Date("2022-01-01T00:00:00.000Z"),
-        uint8: new Uint8Array([0, 1, 2, 3]),
-      };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer, 4);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver) as typeof obj;
-      expect(parsedObj.bigInt).toEqual(obj.bigInt);
-      expect(parsedObj.map.get("key")).toEqual("value");
-      expect(parsedObj.nestedMap.get("key")).toBeInstanceOf(GuidMap);
-      expect(parsedObj.nestedMap.get("key")?.get(guid)).toEqual("value");
-      expect(parsedObj.date.getTime()).toEqual(obj.date.getTime());
-      expect(parsedObj.uint8).toEqual(obj.uint8);
-    });
-
-    it("should support arrays with multiple types", () => {
-      const data = ["value", 200, { a: "" }, [BigInt(100)]];
-      const obj = { map: new Map([["key", data]]) };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver);
-      expect(parsedObj.map.get("key")).toStrictEqual(data);
-    });
-
-    // Edge case: Empty Map
-    it("should throw for empty Map values", () => {
-      const obj = { map: new Map() };
-      expect(() => JSON.stringify(obj, BebopJson.replacer)).toThrow(BebopRuntimeError);
-    });
-
-    // Edge case: Empty Uint8Array
-    it("should handle empty Uint8Array values", () => {
-      const obj = { uint8: new Uint8Array() };
-      const jsonString = JSON.stringify(obj, BebopJson.replacer);
-      const parsedObj = JSON.parse(jsonString, BebopJson.reviver);
-      expect(parsedObj.uint8).toEqual(obj.uint8);
+  describe("Singleton pattern", () => {
+    it("should return the same instance", () => {
+      const view1 = BebopView.getInstance();
+      const view2 = BebopView.getInstance();
+      expect(view1).toBe(view2);
     });
   });
 
-  describe("security checks", () => {
-    it("should not be vulnerable to prototype pollution", () => {
-      const json = '{"user":{"__proto__":{"admin": true}}}';
-      expect(() => JSON.parse(json, BebopJson.reviver)).toThrow(
-        BebopRuntimeError
-      );
-    });
-  });
-});
-
-describe("BebopTypeGuard", () => {
-  describe("ensureBoolean", () => {
-    it("should not throw an error for a valid boolean", () => {
-      expect(() => BebopTypeGuard.ensureBoolean(true)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureBoolean(false)).not.toThrow();
+  describe("Basic read/write operations", () => {
+    beforeEach(() => {
+      view.startWriting();
     });
 
-    it("should throw an error for an invalid boolean", () => {
-      expect(() => BebopTypeGuard.ensureBoolean(null)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureBoolean(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureBoolean("true")).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureBoolean(1)).toThrow(BebopRuntimeError);
-    });
-  });
+    it("should write and read byte values", () => {
+      const testValues = [0, 1, 127, 128, 255];
 
-  describe("ensureUint8", () => {
-    it("should not throw an error for a valid Uint8 number", () => {
-      expect(() => BebopTypeGuard.ensureUint8(0)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureUint8(255)).not.toThrow();
-    });
-
-    it("should throw an error for an invalid Uint8 number", () => {
-      expect(() => BebopTypeGuard.ensureUint8(null)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureUint8(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint8(-1)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureUint8(256)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureUint8(1.5)).toThrow(BebopRuntimeError);
-    });
-  });
-
-  describe("ensureUint16", () => {
-    it("should not throw an error for a valid Uint16 number", () => {
-      expect(() => BebopTypeGuard.ensureUint16(0)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureUint16(65535)).not.toThrow();
-    });
-
-    it("should throw an error for an invalid Uint16 number", () => {
-      expect(() => BebopTypeGuard.ensureUint16(null)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint16(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint16(-1)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureUint16(65536)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint16(1.5)).toThrow(BebopRuntimeError);
-    });
-  });
-
-  describe("ensureInt16", () => {
-    it("should not throw an error for a valid Int16 number", () => {
-      expect(() => BebopTypeGuard.ensureInt16(-32768)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureInt16(32767)).not.toThrow();
-    });
-
-    it("should throw an error for an invalid Int16 number", () => {
-      expect(() => BebopTypeGuard.ensureInt16(null)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureInt16(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureInt16(-32769)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureInt16(32768)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureInt16(1.5)).toThrow(BebopRuntimeError);
-    });
-  });
-
-  describe("ensureUint32", () => {
-    it("should not throw an error for a valid Uint32 number", () => {
-      expect(() => BebopTypeGuard.ensureUint32(0)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureUint32(4294967295)).not.toThrow();
-    });
-
-    it("should throw an error for an invalid Uint32 number", () => {
-      expect(() => BebopTypeGuard.ensureUint32(null)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint32(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint32(-1)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureUint32(4294967296)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureUint32(1.5)).toThrow(BebopRuntimeError);
-    });
-  });
-
-  describe("ensureInt32", () => {
-    it("should not throw an error for a valid Int32 number", () => {
-      expect(() => BebopTypeGuard.ensureInt32(-2147483648)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureInt32(2147483647)).not.toThrow();
-    });
-
-    it("should throw an error for an invalid Int32 number", () => {
-      expect(() => BebopTypeGuard.ensureInt32(null)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureInt32(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureInt32(-2147483649)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureInt32(2147483648)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureInt32(1.5)).toThrow(BebopRuntimeError);
-    });
-  });
-
-  describe("ensureFloat", () => {
-    it("should not throw an error for a valid Float number", () => {
-      expect(() => BebopTypeGuard.ensureFloat(-3.4028235e38)).not.toThrow();
-      expect(() => BebopTypeGuard.ensureFloat(3.4028235e38)).not.toThrow();
-    });
-
-    it("should throw an error for an invalid Float32 number", () => {
-      expect(() => BebopTypeGuard.ensureFloat(null)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureFloat(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureFloat("1.5")).toThrow(
-        BebopRuntimeError
-      );
-    });
-  });
-
-  describe("ensureString", () => {
-    it("should not throw an error for a valid string", () => {
-      expect(() => BebopTypeGuard.ensureString("hello")).not.toThrow();
-      expect(() => BebopTypeGuard.ensureString("")).not.toThrow();
-    });
-
-    it("should throw an error for an invalid string", () => {
-      expect(() => BebopTypeGuard.ensureString(null)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureString(undefined)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureString(1)).toThrow(BebopRuntimeError);
-      expect(() => BebopTypeGuard.ensureString({})).toThrow(BebopRuntimeError);
-    });
-  });
-
-  describe("ensureArray", () => {
-    const validator = (value: any) => {
-      if (typeof value !== "number") {
-        throw new BebopRuntimeError("Invalid type");
+      for (const value of testValues) {
+        view.writeByte(value);
       }
-    };
-    it("should not throw an error for a valid array", () => {
-      expect(() => BebopTypeGuard.ensureArray([], validator)).not.toThrow();
-      expect(() =>
-        BebopTypeGuard.ensureArray([1, 2, 3], validator)
-      ).not.toThrow();
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readByte()).toBe(expected);
+      }
     });
 
-    it("should throw an error for an invalid array", () => {
-      expect(() => BebopTypeGuard.ensureArray(null, validator)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureArray(undefined, validator)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureArray(1, validator)).toThrow(
-        BebopRuntimeError
-      );
-      expect(() => BebopTypeGuard.ensureArray({}, validator)).toThrow(
-        BebopRuntimeError
-      );
+    it("should write and read uint16 values", () => {
+      const testValues = [0, 1, 255, 256, 65535];
+
+      for (const value of testValues) {
+        view.writeUint16(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readUint16()).toBe(expected);
+      }
+    });
+
+    it("should write and read int16 values", () => {
+      const testValues = [-32768, -1, 0, 1, 32767];
+
+      for (const value of testValues) {
+        view.writeInt16(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readInt16()).toBe(expected);
+      }
+    });
+
+    it("should write and read uint32 values", () => {
+      const testValues = [0, 1, 255, 65536, 4294967295];
+
+      for (const value of testValues) {
+        view.writeUint32(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readUint32()).toBe(expected);
+      }
+    });
+
+    it("should write and read int32 values", () => {
+      const testValues = [-2147483648, -1, 0, 1, 2147483647];
+
+      for (const value of testValues) {
+        view.writeInt32(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readInt32()).toBe(expected);
+      }
+    });
+
+    it("should write and read uint64 values", () => {
+      const testValues = [0n, 1n, 255n, 18446744073709551615n];
+
+      for (const value of testValues) {
+        view.writeUint64(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readUint64()).toBe(expected);
+      }
+    });
+
+    it("should write and read int64 values", () => {
+      const testValues = [-9223372036854775808n, -1n, 0n, 1n, 9223372036854775807n];
+
+      for (const value of testValues) {
+        view.writeInt64(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readInt64()).toBe(expected);
+      }
+    });
+
+    it("should write and read float32 values", () => {
+      const testValues = [0.0, -1.5, 1.5, Math.PI, -Math.PI];
+
+      for (const value of testValues) {
+        view.writeFloat32(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readFloat32()).toBeCloseTo(expected, 6);
+      }
+    });
+
+    it("should write and read float64 values", () => {
+      const testValues = [0.0, -1.5, 1.5, Math.PI, -Math.PI, Number.MAX_VALUE];
+
+      for (const value of testValues) {
+        view.writeFloat64(value);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testValues) {
+        expect(view.readFloat64()).toBe(expected);
+      }
     });
   });
 
-  describe("ensureMap", () => {
-    it("should not throw an error for a valid map", () => {
-      const keyTypeValidator = (value: any) => {
-        if (typeof value !== "number") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      const valueTypeValidator = (value: any) => {
-        if (typeof value !== "string") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      const map = new Map<number, string>();
-      map.set(1, "one");
-      map.set(2, "two");
-
-      expect(() =>
-        BebopTypeGuard.ensureMap(map, keyTypeValidator, valueTypeValidator)
-      ).not.toThrow();
-    });
-    it("should throw an error for an invalid map", () => {
-      const keyTypeValidator = (value: any) => {
-        if (typeof value !== "number") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      const valueTypeValidator = (value: any) => {
-        if (typeof value !== "string") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      const map = new Map<number, any>();
-      map.set(1, "one");
-      map.set(2, 3);
-      expect(() =>
-        BebopTypeGuard.ensureMap(map, keyTypeValidator, valueTypeValidator)
-      ).toThrow(BebopRuntimeError);
-      expect(() =>
-        BebopTypeGuard.ensureMap(null, keyTypeValidator, valueTypeValidator)
-      ).toThrow(BebopRuntimeError);
-      expect(() =>
-        BebopTypeGuard.ensureMap(
-          undefined,
-          keyTypeValidator,
-          valueTypeValidator
-        )
-      ).toThrow(BebopRuntimeError);
-      expect(() =>
-        BebopTypeGuard.ensureMap(1, keyTypeValidator, valueTypeValidator)
-      ).toThrow(BebopRuntimeError);
-      expect(() =>
-        BebopTypeGuard.ensureMap({}, keyTypeValidator, valueTypeValidator)
-      ).toThrow(BebopRuntimeError);
+  describe("String operations", () => {
+    beforeEach(() => {
+      view.startWriting();
     });
 
-    it("should throw an error for array with mixed types", () => {
-      const validator = (value: any) => {
-        if (typeof value !== "number") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      expect(() =>
-        BebopTypeGuard.ensureArray([1, "string"], validator)
-      ).toThrow(BebopRuntimeError);
+    it("should write and read empty string", () => {
+      view.writeString("");
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      expect(view.readString()).toBe("");
     });
 
-    it("should throw an error for a map with inconsistent value types", () => {
-      const keyTypeValidator = (value: any) => {
-        if (typeof value !== "number") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      const valueTypeValidator = (value: any) => {
-        if (typeof value !== "string") {
-          throw new BebopRuntimeError("Invalid type");
-        }
-      };
-      const map = new Map<number, any>();
-      map.set(1, "one");
-      map.set(2, true); // not a string
-      expect(() =>
-        BebopTypeGuard.ensureMap(map, keyTypeValidator, valueTypeValidator)
-      ).toThrow(BebopRuntimeError);
+    it("should write and read ASCII strings", () => {
+      const testStrings = ["hello", "world", "test123", "!@#$%"];
+
+      for (const str of testStrings) {
+        view.writeString(str);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testStrings) {
+        expect(view.readString()).toBe(expected);
+      }
     });
 
-    // Edge case: Extremely large number for Int32
-    it("should throw an error for an extremely large number for Int32", () => {
-      expect(() => BebopTypeGuard.ensureInt32(Number.MAX_VALUE)).toThrow(
-        BebopRuntimeError
-      );
+    it("should write and read UTF-8 strings", () => {
+      const testStrings = ["Hello 世界", "🚀 emoji", "café", "naïve", "Ümlauts"];
+
+      for (const str of testStrings) {
+        view.writeString(str);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testStrings) {
+        expect(view.readString()).toBe(expected);
+      }
     });
 
-    // Edge case: Extremely small number for Int32
-    it("should throw an error for an extremely small number for Int32", () => {
-      expect(() => BebopTypeGuard.ensureInt32(Number.MIN_VALUE)).toThrow(
-        BebopRuntimeError
-      );
+    it("should handle long strings", () => {
+      const longString = "a".repeat(1000);
+
+      view.writeString(longString);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      expect(view.readString()).toBe(longString);
+    });
+  });
+
+  describe("Byte array operations", () => {
+    beforeEach(() => {
+      view.startWriting();
+    });
+
+    it("should write and read empty byte arrays", () => {
+      const emptyArray = new Uint8Array(0);
+      view.writeBytes(emptyArray);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      const result = view.readBytes();
+      expect(result).toEqual(emptyArray);
+      expect(result.length).toBe(0);
+    });
+
+    it("should write and read byte arrays", () => {
+      const testArrays = [
+        new Uint8Array([1, 2, 3]),
+        new Uint8Array([255, 0, 128]),
+        new Uint8Array(Array.from({ length: 100 }, (_, i) => i % 256))
+      ];
+
+      for (const arr of testArrays) {
+        view.writeBytes(arr);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testArrays) {
+        expect(view.readBytes()).toEqual(expected);
+      }
+    });
+  });
+
+  describe("GUID operations", () => {
+    beforeEach(() => {
+      view.startWriting();
+    });
+
+    it("should write and read GUIDs", () => {
+      const testGuids = [
+        "00000000-0000-0000-0000-000000000000",
+        "12345678-1234-1234-1234-123456789abc",
+        "ffffffff-ffff-ffff-ffff-ffffffffffff",
+        "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+      ];
+
+      for (const guid of testGuids) {
+        view.writeGuid(guid);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testGuids) {
+        expect(view.readGuid()).toBe(expected);
+      }
+    });
+
+    it("should handle GUIDs with mixed case", () => {
+      const mixedCaseGuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890";
+      const expectedLowerCase = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+
+      view.writeGuid(mixedCaseGuid);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      expect(view.readGuid()).toBe(expectedLowerCase);
+    });
+  });
+
+  describe("Date operations", () => {
+    beforeEach(() => {
+      view.startWriting();
+    });
+
+    it("should write and read dates", () => {
+      const testDates = [
+        new Date(0), // Unix epoch
+        new Date("2023-01-01T00:00:00Z"),
+        new Date("2023-12-31T23:59:59Z"),
+        new Date(Date.now())
+      ];
+
+      for (const date of testDates) {
+        view.writeDate(date);
+      }
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      for (const expected of testDates) {
+        const result = view.readDate();
+        expect(result.getTime()).toBe(expected.getTime());
+      }
+    });
+  });
+
+  describe("Message length operations", () => {
+    beforeEach(() => {
+      view.startWriting();
+    });
+
+    it("should reserve and fill message length", () => {
+      const position = view.reserveMessageLength();
+      view.writeString("test message");
+      const messageLength = view.length - position - 4; // Subtract the 4 bytes for length prefix
+      view.fillMessageLength(position, messageLength);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      const readLength = view.readMessageLength();
+      expect(readLength).toBe(messageLength);
+
+      const message = view.readString();
+      expect(message).toBe("test message");
+    });
+  });
+
+  describe("Buffer management", () => {
+    it("should handle buffer growth", () => {
+      view.startWriting();
+
+      // Write enough data to trigger buffer growth
+      for (let i = 0; i < 100; i++) {
+        view.writeString("This is a test string that should trigger buffer growth");
+      }
+
+      const buffer = view.toArray();
+      expect(buffer.length).toBeGreaterThan(256); // Initial buffer size
+    });
+
+    it("should handle skip operation", () => {
+      view.startWriting();
+      view.writeUint32(12345);
+      view.writeUint32(67890);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      const first = view.readUint32();
+      expect(first).toBe(12345);
+
+      view.skip(4); // Skip the second uint32
+      expect(view.index).toBe(8);
+    });
+  });
+
+  describe("Error handling", () => {
+    it("should create BebopRuntimeError with correct properties", () => {
+      const error = new BebopRuntimeError("Test error message");
+      expect(error.message).toBe("Test error message");
+      expect(error.name).toBe("BebopRuntimeError");
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
+
+  describe("Standalone GUID reading", () => {
+    it("should read GUID from buffer using readGuid function", () => {
+      // Create a buffer with a known GUID pattern
+      const buffer = new Uint8Array(16);
+      // Set up bytes for GUID: 12345678-1234-1234-1234-123456789abc
+      buffer[0] = 0x78; buffer[1] = 0x56; buffer[2] = 0x34; buffer[3] = 0x12; // 12345678 (little-endian)
+      buffer[4] = 0x34; buffer[5] = 0x12; // 1234 (little-endian)
+      buffer[6] = 0x34; buffer[7] = 0x12; // 1234 (little-endian)
+      buffer[8] = 0x12; buffer[9] = 0x34; // 1234 (big-endian)
+      buffer[10] = 0x12; buffer[11] = 0x34; buffer[12] = 0x56; buffer[13] = 0x78; buffer[14] = 0x9a; buffer[15] = 0xbc; // 123456789abc (big-endian)
+
+      const result = readGuid(buffer, 0);
+      expect(result).toBe("12345678-1234-1234-1234-123456789abc");
+    });
+  });
+
+  describe("Edge cases and boundary conditions", () => {
+    beforeEach(() => {
+      view.startWriting();
+    });
+
+    it("should handle reading from empty buffer", () => {
+      const emptyBuffer = new Uint8Array(0);
+      view.startReading(emptyBuffer);
+      expect(view.length).toBe(0);
+      expect(view.index).toBe(0);
+    });
+
+    it("should handle writing and reading maximum values", () => {
+      // Test boundary values
+      view.writeByte(255);
+      view.writeUint16(65535);
+      view.writeUint32(4294967295);
+      view.writeInt16(-32768);
+      view.writeInt32(-2147483648);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      expect(view.readByte()).toBe(255);
+      expect(view.readUint16()).toBe(65535);
+      expect(view.readUint32()).toBe(4294967295);
+      expect(view.readInt16()).toBe(-32768);
+      expect(view.readInt32()).toBe(-2147483648);
+    });
+
+    it("should handle very long strings that exceed minimumTextDecoderLength", () => {
+      // Create a string longer than the minimum text decoder length (300)
+      const longString = "x".repeat(400);
+
+      view.writeString(longString);
+
+      const buffer = view.toArray();
+      view.startReading(buffer);
+
+      expect(view.readString()).toBe(longString);
     });
   });
 });

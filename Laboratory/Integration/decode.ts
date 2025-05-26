@@ -1,4 +1,4 @@
-import {Library, ILibrary, IAlbum} from "./schema";
+import {Library} from "./schema";
 import {makelib} from "./makelib";
 import fs from "fs";
 import equal from "deep-equal";

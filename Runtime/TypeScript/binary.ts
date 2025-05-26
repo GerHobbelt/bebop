@@ -1,9 +1,7 @@
 import {
   BebopRuntimeError,
-  BebopTypeGuard,
   BebopView,
-  Guid,
-  GuidMap,
+  readGuid,
 } from "./index";
 
 const decoder = new TextDecoder();
@@ -46,9 +44,9 @@ enum WireBaseType {
 
 enum WireTypeKind {
   Struct = 1,
-  Message,
-  Union,
-  Enum,
+  Message = 2,
+  Union = 3,
+  Enum = 4,
 }
 
 type Decorators = Decorator[];
@@ -60,7 +58,7 @@ interface Decorator {
 
 interface DecoratorArgument {
   typeId: number;
-  value: string | number | bigint | Guid | null;
+  value: string | number | bigint | null;
 }
 
 interface EnumMember {
@@ -184,12 +182,12 @@ export class RecordReader {
 
   private readStructDefinition(definition: Struct, view: BebopView) {
     const record = {} as Record<string, unknown>;
-    Object.values(definition.fields).forEach((field) => {
+    for (const field of Object.values(definition.fields)) {
       record[field.name] = this.readField(field, view);
       if (!(field.name in record) || record[field.name] === undefined) {
         throw new BebopRuntimeError(`Missing field ${field.name}`);
       }
-    });
+    }
     if (!definition.isMutable) {
       Object.freeze(record);
     }
@@ -241,7 +239,7 @@ export class RecordReader {
   private readScalar(
     typeId: WireBaseType,
     view: BebopView
-  ): boolean | number | string | Date | bigint | Guid {
+  ): boolean | number | string | Date | bigint {
     switch (typeId) {
       case WireBaseType.Bool:
         return !!view.readByte();
@@ -296,7 +294,7 @@ export class RecordReader {
     if (memberType === WireBaseType.Byte) {
       return view.readBytes();
     }
-    let definition;
+    let definition: Definition | undefined;
     if (memberType >= 0) {
       definition = this.schema.getDefinition(memberType);
     }
@@ -315,25 +313,22 @@ export class RecordReader {
   private readMap(
     field: FieldTypes,
     view: BebopView
-  ): Map<unknown, unknown> | GuidMap<unknown> {
+  ): Map<unknown, unknown> {
     if (field.type !== "map") {
       throw new BebopRuntimeError(`Expected map field, got ${field.type}`);
     }
 
     const keyType = field.keyTypeId;
     const valueType = field.valueTypeId;
-    const map =
-      field.keyTypeId === WireBaseType.Guid
-        ? new GuidMap<unknown>()
-        : new Map<unknown, unknown>();
+    const map = new Map<unknown, unknown>();
     const size = view.readUint32();
-    let definition;
+    let definition: Definition | undefined;
     if (valueType >= 0) {
       definition = this.schema.getDefinition(valueType);
     }
     for (let i = 0; i < size; i++) {
       const key = this.readScalar(keyType, view);
-      let value;
+      let value: unknown;
       if (definition !== undefined) {
         value = this.readDefinition(definition, view);
       } else if (field.nestedType !== undefined) {
@@ -464,7 +459,7 @@ export class RecordWriter {
       throw new BebopRuntimeError(`Expected object, got ${typeof record}`);
     }
     const before = view.length;
-    Object.values(definition.fields).forEach((field) => {
+    for (const field of Object.values(definition.fields)) {
       if (!(field.name in record)) {
         throw new BebopRuntimeError(`Missing field: ${field.name}`);
       }
@@ -472,7 +467,7 @@ export class RecordWriter {
         throw new BebopRuntimeError(`Field ${field.name} is undefined`);
       }
       this.writeField(field, view, record[field.name]);
-    });
+    }
     const after = view.length;
     return after - before;
   }
@@ -488,7 +483,7 @@ export class RecordWriter {
     const before = view.length;
     const pos = view.reserveMessageLength();
     const start = view.length;
-    Object.values(definition.fields).forEach((field) => {
+    for (const field of Object.values(definition.fields)) {
       if (field.constantValue === undefined || field.constantValue === null) {
         throw new BebopRuntimeError(
           `Missing constant value for field: ${field.name}`
@@ -504,7 +499,7 @@ export class RecordWriter {
         view.writeByte(field.constantValue);
         this.writeField(field, view, record[field.name]);
       }
-    });
+    }
     view.writeByte(0);
     const end = view.length;
     view.fillMessageLength(pos, end - start);
@@ -543,31 +538,24 @@ export class RecordWriter {
     }
     switch (definition.baseType) {
       case WireBaseType.Byte:
-        BebopTypeGuard.ensureUint8(value);
         view.writeByte(value as number);
         break;
       case WireBaseType.UInt16:
-        BebopTypeGuard.ensureUint16(value);
         view.writeUint16(value as number);
         break;
       case WireBaseType.Int16:
-        BebopTypeGuard.ensureInt16(value);
         view.writeInt16(value as number);
         break;
       case WireBaseType.UInt32:
-        BebopTypeGuard.ensureUint32(value);
         view.writeUint32(value as number);
         break;
       case WireBaseType.Int32:
-        BebopTypeGuard.ensureInt32(value);
         view.writeInt32(value as number);
         break;
       case WireBaseType.UInt64:
-        BebopTypeGuard.ensureUint64(value);
         view.writeUint64(value as bigint);
         break;
       case WireBaseType.Int64:
-        BebopTypeGuard.ensureInt64(value);
         view.writeInt64(value as bigint);
         break;
       default:
@@ -583,7 +571,7 @@ export class RecordWriter {
     record: unknown
   ): number {
     if (record === null || record === undefined || typeof record !== "object") {
-      throw new BebopRuntimeError(`Expected non-null object value`);
+      throw new BebopRuntimeError("Expected non-null object value");
     }
     if (
       !("discriminator" in record && typeof record.discriminator === "number")
@@ -682,7 +670,7 @@ export class RecordWriter {
       view.writeBytes(value as Uint8Array);
     } else {
       view.writeUint32(length);
-      let definition;
+      let definition: Definition | undefined;
       if (memberType >= 0) {
         definition = this.schema.getDefinition(memberType);
       }
@@ -700,14 +688,14 @@ export class RecordWriter {
     if (field.type !== "map") {
       throw new BebopRuntimeError(`Expected map field, got ${field.type}`);
     }
-    if (!(value instanceof Map || value instanceof GuidMap)) {
+    if (!(value instanceof Map)) {
       throw new BebopRuntimeError(`Expected Map, got ${typeof value}`);
     }
     const keyType = field.keyTypeId;
     const valueType = field.valueTypeId;
     const size = value.size;
     view.writeUint32(size);
-    let definition;
+    let definition: Definition | undefined;
     if (valueType >= 0) {
       definition = this.schema.getDefinition(valueType);
     }
@@ -728,7 +716,7 @@ export class RecordWriter {
           this.writeMap(
             nested,
             view,
-            v as Map<unknown, unknown> | GuidMap<unknown>
+            v as Map<unknown, unknown>
           );
         }
       } else {
@@ -740,55 +728,42 @@ export class RecordWriter {
   private writeScalar(typeId: WireBaseType, view: BebopView, value: unknown) {
     switch (typeId) {
       case WireBaseType.Bool:
-        BebopTypeGuard.ensureBoolean(value);
         view.writeByte(Number(value));
         break;
       case WireBaseType.Byte:
-        BebopTypeGuard.ensureUint8(value);
         view.writeByte(value as number);
         break;
       case WireBaseType.UInt16:
-        BebopTypeGuard.ensureUint16(value);
         view.writeUint16(value as number);
         break;
       case WireBaseType.Int16:
-        BebopTypeGuard.ensureInt16(value);
         view.writeInt16(value as number);
         break;
       case WireBaseType.UInt32:
-        BebopTypeGuard.ensureUint32(value);
         view.writeUint32(value as number);
         break;
       case WireBaseType.Int32:
-        BebopTypeGuard.ensureInt32(value);
         view.writeInt32(value as number);
         break;
       case WireBaseType.UInt64:
-        BebopTypeGuard.ensureUint64(value as bigint);
         view.writeUint64(value as bigint);
         break;
       case WireBaseType.Int64:
-        BebopTypeGuard.ensureInt64(value as bigint);
         view.writeInt64(value as bigint);
         break;
       case WireBaseType.Float32:
-        BebopTypeGuard.ensureFloat(value);
         view.writeFloat32(value as number);
         break;
       case WireBaseType.Float64:
-        BebopTypeGuard.ensureFloat(value);
         view.writeFloat64(value as number);
         break;
       case WireBaseType.String:
-        BebopTypeGuard.ensureString(value);
         view.writeString(value as string);
         break;
       case WireBaseType.Guid:
-        BebopTypeGuard.ensureGuid(value);
-        view.writeGuid(value as Guid);
+        view.writeGuid(value as string);
         break;
       case WireBaseType.Date:
-        BebopTypeGuard.ensureDate(value);
         view.writeDate(value as Date);
         break;
       default:
@@ -833,26 +808,28 @@ export class BinarySchema {
     //@ts-expect-error
     this.writer = new RecordWriter(this);
     this.dataProxy = new Proxy(this.data, {
-      get: (target: Uint8Array, prop: PropertyKey): any => {
+      get: (target: Uint8Array, prop: PropertyKey): unknown => {
         // If prop is 'length', return the length of the Uint8Array
         if (prop === "length") {
           return target.length;
         }
         // If prop is a number-like string, convert it to a number and return the element at that index in the Uint8Array
-        if (typeof prop === "string" && !isNaN(Number(prop))) {
+        if (typeof prop === "string" && !Number.isNaN(Number(prop))) {
           return target[Number(prop)];
         }
         // If prop is the name of a method of Uint8Array, return the function
         if (
-          typeof prop === "string" &&
-          typeof (target as any)[prop] === "function"
+          typeof prop === "string"
         ) {
-          return (target as any)[prop].bind(target);
+          const value = (target as Uint8Array)[prop as keyof Uint8Array];
+          if (typeof value === "function") {
+            return value.bind(target);
+          }
         }
         // Optionally, you can throw an error or return undefined for all other properties
         throw new BebopRuntimeError(`Cannot access property ${String(prop)}`);
       },
-      set: (_: Uint8Array, __: PropertyKey, ___: any): boolean => {
+      set: (_: Uint8Array, __: PropertyKey, ___: unknown): boolean => {
         throw new BebopRuntimeError("Cannot modify schema data");
       },
     });
@@ -870,7 +847,7 @@ export class BinarySchema {
     const schemaVersion = this.getUint8();
     const numDefinedTypes = this.getUint32();
 
-    let definedTypes: { [typeName: string]: Definition; } = {};
+    const definedTypes: { [typeName: string]: Definition; } = {};
     for (let i = 0; i < numDefinedTypes; i++) {
       const def = this.getDefinedType(i);
       definedTypes[def.name] = def;
@@ -879,7 +856,7 @@ export class BinarySchema {
     }
 
     const serviceCount = this.getUint32();
-    let services: { [serviceName: string]: Service; } = {};
+    const services: { [serviceName: string]: Service; } = {};
 
     for (let i = 0; i < serviceCount; i++) {
       const service = this.getServiceDefinition();
@@ -900,7 +877,7 @@ export class BinarySchema {
     if (this.parsedSchema === undefined) {
       this.get();
     }
-    return this.parsedSchema!;
+    return this.parsedSchema as Readonly<SchemaAst>;
   }
   /**
    * Returns the raw binary data of the schema wrapped in an immutable Uint8Array.
@@ -1086,7 +1063,7 @@ export class BinarySchema {
 
   private getField(parentKind: WireTypeKind): Field {
     const fieldName = this.getString();
-    let fieldTypeId = this.getTypeId();
+    const fieldTypeId = this.getTypeId();
     let fieldProperties: FieldTypes;
 
     if (fieldTypeId === this.ArrayType || fieldTypeId === this.MapType) {
@@ -1102,7 +1079,7 @@ export class BinarySchema {
       parentKind === WireTypeKind.Message
         ? this.getConstantValue(WireBaseType.Byte)
         : null
-    ) as any;
+    ) as  number | null | undefined;
 
     return {
       name: fieldName,
@@ -1143,7 +1120,7 @@ export class BinarySchema {
 
   private getConstantValue(
     typeId: number
-  ): string | number | bigint | Guid | null {
+  ): string | number | bigint  | null {
     switch (typeId) {
       case WireBaseType.Bool:
         return this.getBool() ? 1 : 0;
@@ -1168,24 +1145,24 @@ export class BinarySchema {
       case WireBaseType.String:
         return this.getString();
       case WireBaseType.Guid:
-        return Guid.fromBytes(this.getGuid(), 0);
+        return readGuid(this.getGuid(), 0);
       default:
         throw new BebopRuntimeError(`Unsupported constant type ID: ${typeId}`);
     }
   }
 
   private getServiceDefinition(): Service {
-    let name = this.getString();
-    let decorators = this.getDecorators();
-    let methods: { [name: string]: ServiceMethod; } = {};
-    let methodCount = this.getUint32();
+    const name = this.getString();
+    const decorators = this.getDecorators();
+    const methods: { [name: string]: ServiceMethod; } = {};
+    const methodCount = this.getUint32();
     for (let i = 0; i < methodCount; i++) {
-      let methodName = this.getString();
-      let methodDecorators = this.getDecorators();
-      let methodType = this.getUint8() as WireMethodType;
-      let requestTypeId = this.getTypeId();
-      let responseTypeId = this.getTypeId();
-      let id = this.getUint32();
+      const methodName = this.getString();
+      const methodDecorators = this.getDecorators();
+      const methodType = this.getUint8() as WireMethodType;
+      const requestTypeId = this.getTypeId();
+      const responseTypeId = this.getTypeId();
+      const id = this.getUint32();
       methods[methodName] = {
         name: methodName,
         decorators: methodDecorators,
@@ -1216,55 +1193,55 @@ export class BinarySchema {
   }
 
   private getUint8() {
-    let value = this.view.getUint8(this.pos);
+    const value = this.view.getUint8(this.pos);
     this.pos++;
     return value;
   }
 
   private getUint16() {
-    let value = this.view.getUint16(this.pos, true);
+    const value = this.view.getUint16(this.pos, true);
     this.pos += 2;
     return value;
   }
 
   private getInt16() {
-    let value = this.view.getInt16(this.pos, true);
+    const value = this.view.getInt16(this.pos, true);
     this.pos += 2;
     return value;
   }
 
   private getUint32() {
-    let value = this.view.getUint32(this.pos, true);
+    const value = this.view.getUint32(this.pos, true);
     this.pos += 4;
     return value;
   }
 
   private getInt32() {
-    let value = this.view.getInt32(this.pos, true);
+    const value = this.view.getInt32(this.pos, true);
     this.pos += 4;
     return value;
   }
 
   private getUint64() {
-    let value = this.view.getBigUint64(this.pos, true);
+    const value = this.view.getBigUint64(this.pos, true);
     this.pos += 8;
     return Number(value);
   }
 
   private getInt64() {
-    let value = this.view.getBigInt64(this.pos, true);
+    const value = this.view.getBigInt64(this.pos, true);
     this.pos += 8;
     return Number(value);
   }
 
   private getFloat32() {
-    let value = this.view.getFloat32(this.pos, true);
+    const value = this.view.getFloat32(this.pos, true);
     this.pos += 4;
     return value;
   }
 
   private getFloat64() {
-    let value = this.view.getFloat64(this.pos, true);
+    const value = this.view.getFloat64(this.pos, true);
     this.pos += 8;
     return value;
   }
@@ -1274,13 +1251,13 @@ export class BinarySchema {
   }
 
   private getTypeId() {
-    let typeId = this.view.getInt32(this.pos, true);
+    const typeId = this.view.getInt32(this.pos, true);
     this.pos += 4;
     return typeId;
   }
 
   private getGuid() {
-    let value = this.data.subarray(this.pos, this.pos + 16);
+    const value = this.data.subarray(this.pos, this.pos + 16);
     this.pos += 16;
     return value;
   }

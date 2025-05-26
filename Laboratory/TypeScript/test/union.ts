@@ -1,6 +1,5 @@
 import { BebopView } from 'bebop';
-import { IU, U, IWeirdOrder, WeirdOrder } from './generated/gen';
-import * as assert from "assert";
+import { U, WeirdOrder } from './generated/gen';
 if (typeof require !== 'undefined') {
     if (typeof TextDecoder === 'undefined') (global as any).TextDecoder = require('util').TextDecoder;
 }
