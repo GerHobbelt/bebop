@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -302,11 +303,12 @@ namespace Core.Generators.Dart
         /// Generate code for a Bebop schema.
         /// </summary>
         /// <returns>The generated code.</returns>
-        public override ValueTask<string> Compile(BebopSchema schema, GeneratorConfig config, CancellationToken cancellationToken = default)
+        public override ValueTask<Artifact[]> Compile(BebopSchema schema, GeneratorConfig config, CancellationToken cancellationToken = default)
         {
+            var artifacts = new List<Artifact>();
             Schema = schema;
             Config = config;
-            var builder = new StringBuilder();
+            var builder = new IndentedStringBuilder();
             builder.AppendLine("import 'dart:typed_data';");
             builder.AppendLine("import 'package:meta/meta.dart';");
             builder.AppendLine("import 'package:bebop_dart/bebop_dart.dart';");
@@ -409,14 +411,10 @@ namespace Core.Generators.Dart
                 }
             }
 
-            return ValueTask.FromResult(builder.ToString());
+            artifacts.Add(new Artifact(config.OutFile, builder.Encode()));
+            return ValueTask.FromResult(artifacts.ToArray());
         }
 
-        public override AuxiliaryFile? GetAuxiliaryFile() => null;
-        public override void WriteAuxiliaryFile(string outputPath)
-        {
-            // There is nothing to do here.
-        }
 
         public override string Alias { get => "dart"; set => throw new NotImplementedException(); }
         public override string Name { get => "Dart"; set => throw new NotImplementedException(); }
