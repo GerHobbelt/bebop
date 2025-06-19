@@ -383,7 +383,7 @@ namespace Core.Generators.CPlusPlus
             {
                 if (!string.IsNullOrWhiteSpace(definition.Documentation))
                 {
-                    builder.Append(FormatDocumentation(definition.Documentation, 0));
+                    builder.AppendLine(FormatDocumentation(definition.Documentation, 0));
                 }
                 switch (definition)
                 {
@@ -423,7 +423,7 @@ namespace Core.Generators.CPlusPlus
                                 var type = TypeName(field.Type);
                                 if (!string.IsNullOrWhiteSpace(field.Documentation))
                                 {
-                                    builder.Append(FormatDocumentation(field.Documentation, 2));
+                                    builder.AppendLine(FormatDocumentation(field.Documentation, 2));
                                 }
                                 if (field.DeprecatedDecorator is not null && field.DeprecatedDecorator.TryGetValue("reason", out var reason))
                                 {

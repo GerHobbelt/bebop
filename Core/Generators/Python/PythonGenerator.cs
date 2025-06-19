@@ -358,7 +358,7 @@ namespace Core.Generators.Python
                         builder.Indent(indentStep);
                         if (!string.IsNullOrWhiteSpace(definition.Documentation))
                         {
-                            builder.Append(FormatDocumentation(definition.Documentation, null));
+                            builder.AppendLine(FormatDocumentation(definition.Documentation, null));
                             builder.AppendLine();
                         }
 
@@ -372,7 +372,7 @@ namespace Core.Generators.Python
                                     field.DeprecatedDecorator?.TryGetValue("reason", out var reason) ?? false
                                         ? reason
                                         : null;
-                                builder.Append(FormatDocumentation(field.Documentation, deprecatedReason));
+                                builder.AppendLine(FormatDocumentation(field.Documentation, deprecatedReason));
                                 builder.AppendLine("");
                             }
                         }
@@ -387,7 +387,7 @@ namespace Core.Generators.Python
                             builder.Indent(indentStep);
                             if (!string.IsNullOrWhiteSpace(definition.Documentation))
                             {
-                                builder.Append(FormatDocumentation(definition.Documentation, null));
+                                builder.AppendLine(FormatDocumentation(definition.Documentation, null));
                                 builder.AppendLine();
                             }
 
@@ -400,7 +400,7 @@ namespace Core.Generators.Python
                                 builder.AppendLine($"{fieldPrepend}{field.Name}: {type}");
                                 if (!string.IsNullOrWhiteSpace(field.Documentation))
                                 {
-                                    builder.Append(FormatDocumentation(field.Documentation,
+                                    builder.AppendLine(FormatDocumentation(field.Documentation,
                                         field.DeprecatedDecorator?.Arguments?["reason"]));
                                 }
 
@@ -472,7 +472,7 @@ namespace Core.Generators.Python
                                 builder.AppendLine();
                                 if (!string.IsNullOrWhiteSpace(definition.Documentation))
                                 {
-                                    builder.Append(FormatDocumentation(definition.Documentation, null));
+                                    builder.AppendLine(FormatDocumentation(definition.Documentation, null));
                                 }
 
                                 if (rd.OpcodeDecorator is not null &&

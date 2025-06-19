@@ -1663,7 +1663,7 @@ public class CGenerator : BaseGenerator
                     mapTypes.Add(
                         $"BEBOP_DECLARE_MAP_VIEW({keyTypeName}, {GetCTypeName(mt.KeyType)}, {valueTypeName}, {GetCTypeName(mt.ValueType)});");
                 }
-                else 
+                else
                 {
                     mapTypes.Add(
                         $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, {GetCTypeName(mt.KeyType)}, {valueTypeName}, {GetCTypeName(mt.ValueType)});");

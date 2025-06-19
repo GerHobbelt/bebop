@@ -318,7 +318,7 @@ namespace Core.Generators.Dart
             {
                 if (!string.IsNullOrWhiteSpace(definition.Documentation))
                 {
-                    builder.Append(FormatDocumentation(definition.Documentation, 2));
+                    builder.AppendLine(FormatDocumentation(definition.Documentation, 2));
                 }
                 switch (definition)
                 {
@@ -332,7 +332,7 @@ namespace Core.Generators.Dart
                             var field = ed.Members.ElementAt(i);
                             if (!string.IsNullOrWhiteSpace(field.Documentation))
                             {
-                                builder.Append(FormatDocumentation(field.Documentation, 2));
+                                builder.AppendLine(FormatDocumentation(field.Documentation, 2));
                             }
                             if (field.DeprecatedDecorator is not null && field.DeprecatedDecorator.TryGetValue("reason", out var reason))
                             {
@@ -350,7 +350,7 @@ namespace Core.Generators.Dart
                             var type = TypeName(field.Type);
                             if (!string.IsNullOrWhiteSpace(field.Documentation))
                             {
-                                builder.Append(FormatDocumentation(field.Documentation, 2));
+                                builder.AppendLine(FormatDocumentation(field.Documentation, 2));
                             }
                             if (field.DeprecatedDecorator is not null && field.DeprecatedDecorator.TryGetValue("reason", out var reason))
                             {
