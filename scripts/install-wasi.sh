@@ -29,6 +29,7 @@ get_arch() {
 download_and_extract() {
     os_arch=$1
     file_name="wasi-sdk-${WASI_VERSION_FULL}-${os_arch}.tar.gz"
+    extracted_dir="wasi-sdk-${WASI_VERSION_FULL}-${os_arch}"
     url="https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/$file_name"
     
     echo "Downloading $file_name from $url"
@@ -41,6 +42,16 @@ download_and_extract() {
     
     # Extract the file
     tar -xvf "$file_name" -C "$install_path"
+    
+    # Rename the extracted directory to the expected name
+    if [ -d "$install_path/$extracted_dir" ]; then
+        mv "$install_path/$extracted_dir" "$WASI_SDK_PATH"
+        echo "Renamed $extracted_dir to wasi-sdk-${WASI_VERSION_FULL}"
+    else
+        echo "Warning: Expected directory $extracted_dir not found after extraction"
+        echo "Available directories:"
+        ls -la "$install_path"
+    fi
     
     # Clean up: remove the downloaded tar.gz file
     rm "$file_name"
