@@ -165,15 +165,97 @@ typedef enum {
   #endif
 // clang-format on
 
+/** @defgroup packed_enums Packed Enum Support
+ *  @{
+ */
+
+/* Packed enum support for different underlying types */
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L && \
+    ((defined(__clang__) && __clang_major__ >= 20) || \
+     (defined(__GNUC__) && __GNUC__ >= 13))
+  #define BEBOP_ENUM_UINT8 enum : uint8_t
+  #define BEBOP_ENUM_UINT16 enum : uint16_t
+  #define BEBOP_ENUM_INT16 enum : int16_t
+  #define BEBOP_ENUM_UINT32 enum : uint32_t
+  #define BEBOP_ENUM_INT32 enum : int32_t
+  #define BEBOP_ENUM_UINT64 enum : uint64_t
+  #define BEBOP_ENUM_INT64 enum : int64_t
+#elif defined(__cplusplus)
+  #define BEBOP_ENUM_UINT8 enum : uint8_t
+  #define BEBOP_ENUM_UINT16 enum : uint16_t
+  #define BEBOP_ENUM_INT16 enum : int16_t
+  #define BEBOP_ENUM_UINT32 enum : uint32_t
+  #define BEBOP_ENUM_INT32 enum : int32_t
+  #define BEBOP_ENUM_UINT64 enum : uint64_t
+  #define BEBOP_ENUM_INT64 enum : int64_t
+#elif defined(_MSC_VER) && !defined(__clang__)
+  /* MSVC using pragma pack */
+  #define BEBOP_ENUM_UINT8 __pragma(pack(push, 1)) enum __pragma(pack(pop))
+  #define BEBOP_ENUM_UINT16 enum
+  #define BEBOP_ENUM_INT16 enum
+  #define BEBOP_ENUM_UINT32 enum
+  #define BEBOP_ENUM_INT32 enum
+  #define BEBOP_ENUM_UINT64 enum
+  #define BEBOP_ENUM_INT64 enum
+#elif defined(__GNUC__) || defined(__clang__)
+  /* GCC/Clang using attribute packed for uint8 only */
+  #define BEBOP_ENUM_UINT8 enum __attribute__((__packed__))
+  #define BEBOP_ENUM_UINT16 enum
+  #define BEBOP_ENUM_INT16 enum
+  #define BEBOP_ENUM_UINT32 enum
+  #define BEBOP_ENUM_INT32 enum
+  #define BEBOP_ENUM_UINT64 enum
+  #define BEBOP_ENUM_INT64 enum
+#else
+  /* Fallback - no packing support */
+  #define BEBOP_ENUM_UINT8 enum
+  #define BEBOP_ENUM_UINT16 enum
+  #define BEBOP_ENUM_INT16 enum
+  #define BEBOP_ENUM_UINT32 enum
+  #define BEBOP_ENUM_INT32 enum
+  #define BEBOP_ENUM_UINT64 enum
+  #define BEBOP_ENUM_INT64 enum
+#endif
+
+/** @} */
+
+/** @defgroup empty_struct Empty Structure Support
+ *  @{
+ */
+
+/**
+ * @brief Dummy field for empty structures to ensure defined behavior
+ * 
+ * C standard specifies undefined behavior for structures without named members.
+ * Uses zero-width bitfield on compilers that support it (takes no space),
+ * falls back to a single byte field on others.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+  #define BEBOP_EMPTY_STRUCT_FIELD uint8_t _bebop_reserved_empty : 1
+#else
+  /* Fallback to minimal size field */
+  #define BEBOP_EMPTY_STRUCT_FIELD uint8_t _bebop_reserved_empty
+#endif
+
+/** @} */
+
 /** Globally unique identifier (RFC 4122 compatible) */
-#pragma pack(push, 1)
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+  #pragma pack(push, 1)
+#endif
 typedef struct {
   uint32_t data1;   /**< First 32 bits */
   uint16_t data2;   /**< Next 16 bits */
   uint16_t data3;   /**< Next 16 bits */
   uint8_t data4[8]; /**< Final 64 bits */
-} bebop_guid_t;
-#pragma pack(pop)
+} 
+#if defined(__GNUC__) || defined(__clang__)
+  __attribute__((packed))
+#endif
+bebop_guid_t;
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+  #pragma pack(pop)
+#endif
 
 typedef int64_t bebop_date_t; /**< Date as 100ns ticks since Unix epoch */
 

@@ -204,10 +204,7 @@ public class CGenerator : BaseGenerator
         var builder = new IndentedStringBuilder(IndentStep);
         builder.AppendLine("size_t pos;");
         builder.AppendLine("bebop_result_t result = bebop_writer_reserve_message_length(writer, &pos);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("size_t start = bebop_writer_length(writer);");
         builder.AppendLine("");
@@ -222,10 +219,7 @@ public class CGenerator : BaseGenerator
             builder.AppendLine($"if (bebop_is_some(record->{field.Name.ToSnakeCase()})) {{");
             builder.Indent(IndentStep);
             builder.AppendLine($"result = bebop_writer_write_byte(writer, {field.ConstantValue});");
-            builder.AppendLine("if (result != BEBOP_OK)");
-            builder.Indent(IndentStep);
-            builder.AppendLine("return result;");
-            builder.Dedent(IndentStep);
+            builder.AppendLine("if (result != BEBOP_OK) return result;");
             builder.AppendLine("");
             builder.AppendLine(CompileEncodeField(field.Type, $"bebop_unwrap(record->{field.Name.ToSnakeCase()})"));
             builder.Dedent(IndentStep);
@@ -234,10 +228,7 @@ public class CGenerator : BaseGenerator
         }
 
         builder.AppendLine("result = bebop_writer_write_byte(writer, 0);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("size_t end = bebop_writer_length(writer);");
         builder.AppendLine("return bebop_writer_fill_message_length(writer, pos, (uint32_t)(end - start));");
@@ -276,16 +267,10 @@ public class CGenerator : BaseGenerator
         var builder = new IndentedStringBuilder(IndentStep);
         builder.AppendLine("size_t pos;");
         builder.AppendLine("bebop_result_t result = bebop_writer_reserve_message_length(writer, &pos);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("result = bebop_writer_write_byte(writer, record->tag);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("size_t start = bebop_writer_length(writer);");
         builder.AppendLine("");
@@ -298,10 +283,7 @@ public class CGenerator : BaseGenerator
             builder.Indent(IndentStep);
             builder.AppendLine(
                 $"result = {namespacePrefix}{branch.Definition.Name.ToSnakeCase()}_encode_into(&record->as_{branch.Definition.Name.ToSnakeCase()}, writer);");
-            builder.AppendLine("if (result != BEBOP_OK)");
-            builder.Indent(IndentStep);
-            builder.AppendLine("return result;");
-            builder.Dedent(IndentStep);
+            builder.AppendLine("if (result != BEBOP_OK) return result;");
             builder.AppendLine("break;");
             builder.Dedent(IndentStep);
         }
@@ -327,10 +309,7 @@ public class CGenerator : BaseGenerator
         {
             case ArrayType at when at.IsBytes():
                 builder.AppendLine($"result = bebop_writer_write_byte_array_view(writer, {target});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             case ArrayType at when IsFixedScalarTypeForBulk(at.MemberType):
@@ -339,19 +318,13 @@ public class CGenerator : BaseGenerator
                 if (bulkFunction != null)
                 {
                     builder.AppendLine($"result = {bulkFunction}(writer, {target}.data, {target}.length);");
-                    builder.AppendLine("if (result != BEBOP_OK)");
-                    builder.Indent(IndentStep);
-                    builder.AppendLine("return result;");
-                    builder.Dedent(IndentStep);
+                    builder.AppendLine("if (result != BEBOP_OK) return result;");
                 }
                 else
                 {
                     // Fallback to loop for types without specialized bulk functions
                     builder.AppendLine($"result = bebop_writer_write_uint32(writer, (uint32_t){target}.length);");
-                    builder.AppendLine("if (result != BEBOP_OK)");
-                    builder.Indent(IndentStep);
-                    builder.AppendLine("return result;");
-                    builder.Dedent(IndentStep);
+                    builder.AppendLine("if (result != BEBOP_OK) return result;");
                     builder.AppendLine($"for (size_t {i} = 0; {i} < {target}.length; {i}++) {{");
                     builder.Indent(IndentStep);
                     builder.AppendLine(CompileEncodeField(at.MemberType, $"{target}.data[{i}]", depth + 1));
@@ -364,10 +337,7 @@ public class CGenerator : BaseGenerator
             case ArrayType at:
                 // Use loop-based approach for complex types (strings, structs, etc.)
                 builder.AppendLine($"result = bebop_writer_write_uint32(writer, (uint32_t){target}.length);");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 builder.AppendLine($"for (size_t {i} = 0; {i} < {target}.length; {i}++) {{");
                 builder.Indent(IndentStep);
                 builder.AppendLine(CompileEncodeField(at.MemberType, $"{target}.data[{i}]", depth + 1));
@@ -377,10 +347,7 @@ public class CGenerator : BaseGenerator
 
             case MapType mt:
                 builder.AppendLine($"result = bebop_writer_write_uint32(writer, (uint32_t){target}.length);");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 builder.AppendLine($"for (size_t {i} = 0; {i} < {target}.length; {i}++) {{");
                 builder.Indent(IndentStep);
                 builder.AppendLine(CompileEncodeField(mt.KeyType, $"{target}.entries[{i}].key", depth + 1));
@@ -408,10 +375,7 @@ public class CGenerator : BaseGenerator
                     _ => throw new ArgumentOutOfRangeException(st.BaseType.ToString())
                 };
                 builder.AppendLine($"result = {call};");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             case DefinedType dt when Schema.Definitions[dt.Name] is EnumDefinition ed:
@@ -420,10 +384,7 @@ public class CGenerator : BaseGenerator
             case DefinedType dt:
                 builder.AppendLine(
                     $"result = {GetNamespacePrefix()}{dt.Name.ToSnakeCase()}_encode_into(&{target}, writer);");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             default:
@@ -500,10 +461,7 @@ public class CGenerator : BaseGenerator
         builder.AppendLine("");
         builder.AppendLine("uint32_t length;");
         builder.AppendLine("bebop_result_t result = bebop_reader_read_length_prefix(reader, &length);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("const uint8_t* end = bebop_reader_position(reader) + length;");
         builder.AppendLine("");
@@ -511,16 +469,10 @@ public class CGenerator : BaseGenerator
         builder.Indent(IndentStep);
         builder.AppendLine("uint8_t field_id;");
         builder.AppendLine("result = bebop_reader_read_byte(reader, &field_id);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("switch (field_id) {");
-        builder.AppendLine("case 0:");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return BEBOP_OK;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("case 0: return BEBOP_OK;");
         builder.AppendLine("");
 
         var fieldCounter = 0;
@@ -586,19 +538,13 @@ public class CGenerator : BaseGenerator
         var builder = new IndentedStringBuilder(IndentStep);
         builder.AppendLine("uint32_t length;");
         builder.AppendLine("bebop_result_t result = bebop_reader_read_length_prefix(reader, &length);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("const uint8_t* end = bebop_reader_position(reader) + length + 1;");
         builder.AppendLine("");
         builder.AppendLine("uint8_t tag;");
         builder.AppendLine("result = bebop_reader_read_byte(reader, &tag);");
-        builder.AppendLine("if (result != BEBOP_OK)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return result;");
-        builder.Dedent(IndentStep);
+        builder.AppendLine("if (result != BEBOP_OK) return result;");
         builder.AppendLine("");
         builder.AppendLine("out_record->tag = tag;");
         builder.AppendLine("");
@@ -638,20 +584,14 @@ public class CGenerator : BaseGenerator
             case ArrayType at when at.IsBytes():
                 var byteArrayTarget = needsConstCast ? $"(bebop_byte_array_view_t*)&{target}" : $"&{target}";
                 builder.AppendLine($"result = bebop_reader_read_byte_array_view(reader, {byteArrayTarget});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             case ArrayType at when IsFixedScalarType(at.MemberType):
                 // For fixed-size primitive arrays, use zero-copy views
                 builder.AppendLine($"uint32_t length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &length_{depth});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
 
                 if (needsConstCast)
                 {
@@ -675,10 +615,7 @@ public class CGenerator : BaseGenerator
                 // For variable-length elements, allocate and parse each element
                 builder.AppendLine($"uint32_t array_length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &array_length_{depth});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
 
                 if (needsConstCast)
                 {
@@ -736,10 +673,7 @@ public class CGenerator : BaseGenerator
                 // For maps with fixed-size keys and values, use zero-copy views
                 builder.AppendLine($"uint32_t map_length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &map_length_{depth});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
 
                 if (needsConstCast)
                 {
@@ -764,10 +698,7 @@ public class CGenerator : BaseGenerator
                 // For maps with variable-length data, allocate and parse each entry
                 builder.AppendLine($"uint32_t map_length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &map_length_{depth});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
 
                 if (needsConstCast)
                 {
@@ -845,10 +776,7 @@ public class CGenerator : BaseGenerator
                     _ => throw new ArgumentOutOfRangeException(st.BaseType.ToString())
                 };
                 builder.AppendLine($"result = {call};");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             case DefinedType dt when Schema.Definitions[dt.Name] is EnumDefinition ed:
@@ -866,10 +794,7 @@ public class CGenerator : BaseGenerator
                     _ => throw new ArgumentOutOfRangeException(ed.ScalarType.BaseType.ToString())
                 };
                 builder.AppendLine($"result = {underlyingCall};");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             case DefinedType dt:
@@ -878,10 +803,7 @@ public class CGenerator : BaseGenerator
                     : $"&{target}";
                 builder.AppendLine(
                     $"result = {GetNamespacePrefix()}{dt.Name.ToSnakeCase()}_decode_into(reader, {structTarget});");
-                builder.AppendLine("if (result != BEBOP_OK)");
-                builder.Indent(IndentStep);
-                builder.AppendLine("return result;");
-                builder.Dedent(IndentStep);
+                builder.AppendLine("if (result != BEBOP_OK) return result;");
                 break;
 
             default:
@@ -894,7 +816,7 @@ public class CGenerator : BaseGenerator
     /// <summary>
     ///     Get the appropriate const cast target for scalar types
     /// </summary>
-    private string GetConstCastTarget(ScalarType st, string target)
+    private static string GetConstCastTarget(ScalarType st, string target)
     {
         return st.BaseType switch
         {
@@ -918,7 +840,7 @@ public class CGenerator : BaseGenerator
     /// <summary>
     ///     Get the appropriate const cast target for enum types
     /// </summary>
-    private string GetEnumConstCastTarget(EnumDefinition ed, string target)
+    private static string GetEnumConstCastTarget(EnumDefinition ed, string target)
     {
         return ed.ScalarType.BaseType switch
         {
@@ -1063,7 +985,7 @@ public class CGenerator : BaseGenerator
         return $@"""{value.EscapeString()}""";
     }
 
-    private string EmitLiteral(Literal literal)
+    private static string EmitLiteral(Literal literal)
     {
         return literal switch
         {
@@ -1130,7 +1052,6 @@ public class CGenerator : BaseGenerator
         // Generate definitions in proper order using topological sort
         var sortedDefinitions = Schema.SortedDefinitions();
 
-        // Step 1: Generate forward declarations for all record types
         var recordDefinitions = sortedDefinitions.OfType<RecordDefinition>().ToList();
         if (recordDefinitions.Any())
         {
@@ -1160,12 +1081,19 @@ public class CGenerator : BaseGenerator
             }, FormatRegionEnd());
         }
 
-        // Step 2: Generate enums and constants first (no dependencies)
         var enumsAndConstants = sortedDefinitions.Where(d => d is EnumDefinition or ConstDefinition).ToList();
-        if (enumsAndConstants.Any())
+        var unionDefinitions = sortedDefinitions.OfType<UnionDefinition>().ToList();
+
+        if (enumsAndConstants.Any() || unionDefinitions.Any())
         {
             headerBuilder.RegionBlock(FormatRegionStart("Enums and Constants"), 0, regionBuilder =>
             {
+                foreach (var unionDef in unionDefinitions)
+                {
+                    GenerateUnionTagEnum(regionBuilder, unionDef);
+                }
+
+                // Then generate regular enums and constants
                 foreach (var definition in enumsAndConstants)
                 {
                     switch (definition)
@@ -1205,7 +1133,6 @@ public class CGenerator : BaseGenerator
             {
                 foreach (var definition in recordDefinitions)
                 {
-                    // Generate struct definition (without documentation since it's on the forward declaration)
                     GenerateStructDefinitionOnly(regionBuilder, definition);
 
                     // Then generate array/map types that depend on this struct
@@ -1265,7 +1192,7 @@ public class CGenerator : BaseGenerator
         return ValueTask.FromResult(artifacts.ToArray());
     }
 
-    private List<Artifact>? GetRuntime()
+    private static List<Artifact>? GetRuntime()
     {
         var assembly = Assembly.GetEntryAssembly()!;
 
@@ -1334,6 +1261,22 @@ public class CGenerator : BaseGenerator
         return artifacts;
     }
 
+    private static string GetEnumMacro(ScalarType scalarType)
+    {
+        return scalarType.BaseType switch
+        {
+            BaseType.Byte => "BEBOP_ENUM_UINT8",
+            BaseType.UInt16 => "BEBOP_ENUM_UINT16",
+            BaseType.Int16 => "BEBOP_ENUM_INT16",
+            BaseType.UInt32 => "BEBOP_ENUM_UINT32",
+            BaseType.Int32 => "BEBOP_ENUM_INT32",
+            BaseType.UInt64 => "BEBOP_ENUM_UINT64",
+            BaseType.Int64 => "BEBOP_ENUM_INT64",
+            _ => throw new ArgumentOutOfRangeException(nameof(scalarType), $"Unsupported scalar type: {scalarType}")
+        };
+    }
+
+
     private void GenerateEnum(IndentedStringBuilder builder, EnumDefinition definition)
     {
         var namespacePrefix = GetNamespacePrefix();
@@ -1354,14 +1297,15 @@ public class CGenerator : BaseGenerator
             }
         }
 
-        builder.AppendLine($"{deprecatedAttribute}typedef enum {{");
+        var enumMacro = GetEnumMacro(definition.ScalarType);
+
+        builder.AppendLine($"{deprecatedAttribute}typedef {enumMacro} {{");
         builder.Indent(2); // Use 2 spaces for enum members
 
         for (var i = 0; i < definition.Members.Count; i++)
         {
             var member = definition.Members.ElementAt(i);
 
-            // For enum members, emit Doxygen documentation including deprecated info
             var isMemberDeprecated = member.DeprecatedDecorator != null;
 
             var memberDeprecatedReason = isMemberDeprecated &&
@@ -1387,9 +1331,39 @@ public class CGenerator : BaseGenerator
         builder.AppendLine("");
     }
 
+    private void GenerateUnionTagEnum(IndentedStringBuilder builder, UnionDefinition definition)
+    {
+        var namespacePrefix = GetNamespacePrefix();
+        var tagEnumName = GetUnionTagTypeName(definition);
+
+        builder.AppendLine($"/** @brief Tag discriminator for {GetStructTypeName(definition)} */");
+        builder.AppendLine($"typedef BEBOP_ENUM_UINT8 {{");
+        builder.Indent(2);
+
+        foreach (var branch in definition.Branches)
+        {
+            var tagName = $"{namespacePrefix.ToUpper()}{definition.Name.ToScreamingSnakeCase()}_TAG_{branch.Definition.Name.ToScreamingSnakeCase()}";
+            builder.AppendLine($"{tagName} = {branch.Discriminator},");
+        }
+
+        builder.Dedent(2);
+        builder.AppendLine($"}} {tagEnumName};");
+        builder.AppendLine("");
+    }
+
+    private string GetUnionTagTypeName(UnionDefinition definition)
+    {
+        return $"{GetNamespacePrefix()}{definition.Name.ToSnakeCase()}_tag_t";
+    }
+
+    private static bool HasAnyActiveFields(FieldsDefinition definition)
+    {
+        return definition.Fields.Any(f => f.DeprecatedDecorator == null);
+    }
+
+
     private void GenerateStructDefinitionOnly(IndentedStringBuilder headerBuilder, RecordDefinition definition)
     {
-        // Apply deprecated attribute to the struct type itself if present
         var deprecatedAttribute = "";
         if (definition.DeprecatedDecorator != null)
         {
@@ -1411,8 +1385,22 @@ public class CGenerator : BaseGenerator
 
         if (definition is FieldsDefinition fd)
         {
+            bool needsEmptyField = fd.Fields.Count == 0 ||
+                                  (definition is MessageDefinition && !HasAnyActiveFields(fd));
+
+            if (needsEmptyField)
+            {
+                headerBuilder.AppendLine("BEBOP_EMPTY_STRUCT_FIELD;");
+            }
+
             foreach (var field in fd.Fields)
             {
+                // Skip deprecated fields in messages (but not in structs)
+                if (definition is MessageDefinition && field.DeprecatedDecorator != null)
+                {
+                    continue;
+                }
+
                 // Generate Doxygen documentation for fields (including deprecated info)
                 var isFieldDeprecated = field.DeprecatedDecorator != null;
 
@@ -1427,7 +1415,6 @@ public class CGenerator : BaseGenerator
                     headerBuilder.AppendLine(FormatMemberDocumentation(field.Documentation, 0, isFieldDeprecated,
                         fieldDeprecatedReason));
                 }
-
 
                 var fieldName = field.Name.ToSnakeCase();
 
@@ -1468,7 +1455,9 @@ public class CGenerator : BaseGenerator
         }
         else if (definition is UnionDefinition ud)
         {
-            headerBuilder.AppendLine("uint8_t tag;");
+            // Unions shouldn't be empty if they have branches
+            var tagEnumName = GetUnionTagTypeName(ud);
+            headerBuilder.AppendLine($"{tagEnumName} tag;");
             headerBuilder.AppendLine("union {");
             headerBuilder.Indent(2);
 
@@ -1486,7 +1475,6 @@ public class CGenerator : BaseGenerator
         headerBuilder.AppendLine("};");
         headerBuilder.AppendLine("");
     }
-
     private void GenerateArrayMapTypesForStruct(IndentedStringBuilder headerBuilder, RecordDefinition definition)
     {
         var arrayTypes = new HashSet<string>();
@@ -1725,7 +1713,7 @@ public class CGenerator : BaseGenerator
         builder.AppendLine("");
     }
 
-    private string GetIntegerSuffix(ScalarType scalarType)
+    private static string GetIntegerSuffix(ScalarType scalarType)
     {
         return scalarType.BaseType switch
         {
@@ -1799,9 +1787,7 @@ public class CGenerator : BaseGenerator
             $"bebop_result_t {funcName}_encode_into(const {structName}* record, bebop_writer_t* writer)");
         builder.AppendLine("{");
         builder.Indent(IndentStep);
-        builder.AppendLine("if (!record || !writer)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return BEBOP_ERROR_NULL_POINTER;");
+        builder.AppendLine("if (!record || !writer) return BEBOP_ERROR_NULL_POINTER;");
         builder.Dedent(IndentStep);
         builder.AppendLine("");
         builder.AppendLine(CompileEncode(definition));
@@ -1829,9 +1815,7 @@ public class CGenerator : BaseGenerator
             $"bebop_result_t {funcName}_decode_into(bebop_reader_t* reader, {structName}* out_record)");
         builder.AppendLine("{");
         builder.Indent(IndentStep);
-        builder.AppendLine("if (!reader || !out_record)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return BEBOP_ERROR_NULL_POINTER;");
+        builder.AppendLine("if (!reader || !out_record) return BEBOP_ERROR_NULL_POINTER;");
         builder.Dedent(IndentStep);
         builder.AppendLine("");
         builder.AppendLine(CompileDecode(definition));
@@ -1858,9 +1842,7 @@ public class CGenerator : BaseGenerator
         builder.AppendLine($"size_t {funcName}_encoded_size(const {structName}* record)");
         builder.AppendLine("{");
         builder.Indent(IndentStep);
-        builder.AppendLine("if (!record)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return 0;");
+        builder.AppendLine("if (!record) return 0;");
         builder.Dedent(IndentStep);
         builder.AppendLine("");
         builder.AppendLine(CompileGetEncodedSize(definition, true));
@@ -1872,9 +1854,7 @@ public class CGenerator : BaseGenerator
         builder.AppendLine($"size_t {funcName}_max_encoded_size(const {structName}* record)");
         builder.AppendLine("{");
         builder.Indent(IndentStep);
-        builder.AppendLine("if (!record)");
-        builder.Indent(IndentStep);
-        builder.AppendLine("return 0;");
+        builder.AppendLine("if (!record) return 0;");
         builder.Dedent(IndentStep);
         builder.AppendLine("");
         builder.AppendLine(CompileGetEncodedSize(definition, false));
