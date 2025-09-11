@@ -133,32 +133,39 @@ typedef enum {
   /* Only define if not already defined above */
   #ifndef BEBOP_DEPRECATED
     /* 2) C++14 with [[deprecated]] support */
-    #if defined(__cplusplus) && __cplusplus >= 201402L && \
-        defined(__has_cpp_attribute) && __has_cpp_attribute(deprecated)
-      #define BEBOP_DEPRECATED [[deprecated]]
-      #define BEBOP_DEPRECATED_MSG(msg) [[deprecated(msg)]]
-  
-    /* 3) GCC / Clang */
-    #elif defined(__GNUC__) || defined(__clang__)
-      #define BEBOP_DEPRECATED __attribute__((deprecated))
-      #define BEBOP_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))
-  
-    /* 4) MSVC */
-    #elif defined(_MSC_VER)
-      #define BEBOP_DEPRECATED __declspec(deprecated)
-      #define BEBOP_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
-  
-    /* 5) Unknown compiler */
-    #else
-      #if defined(_MSC_VER)
-        #pragma message("WARNING: BEBOP_DEPRECATED is not supported on this compiler")
-      #elif defined(__GNUC__) || defined(__clang__)
-        #warning "BEBOP_DEPRECATED is not supported on this compiler"
-      #else
-        #pragma message("WARNING: BEBOP_DEPRECATED is not supported on this compiler")
+    #if defined(__cplusplus) && __cplusplus >= 201402L
+      #ifdef __has_cpp_attribute
+        #if __has_cpp_attribute(deprecated)
+          #define BEBOP_DEPRECATED [[deprecated]]
+          #define BEBOP_DEPRECATED_MSG(msg) [[deprecated(msg)]]
+        #endif
       #endif
-      #define BEBOP_DEPRECATED
-      #define BEBOP_DEPRECATED_MSG(msg)
+    #endif
+    
+    /* Only define if not already defined above */
+    #ifndef BEBOP_DEPRECATED
+      /* 3) GCC / Clang */
+      #if defined(__GNUC__) || defined(__clang__)
+        #define BEBOP_DEPRECATED __attribute__((deprecated))
+        #define BEBOP_DEPRECATED_MSG(msg) __attribute__((deprecated(msg)))
+    
+      /* 4) MSVC */
+      #elif defined(_MSC_VER)
+        #define BEBOP_DEPRECATED __declspec(deprecated)
+        #define BEBOP_DEPRECATED_MSG(msg) __declspec(deprecated(msg))
+    
+      /* 5) Unknown compiler */
+      #else
+        #if defined(_MSC_VER)
+          #pragma message("WARNING: BEBOP_DEPRECATED is not supported on this compiler")
+        #elif defined(__GNUC__) || defined(__clang__)
+          #warning "BEBOP_DEPRECATED is not supported on this compiler"
+        #else
+          #pragma message("WARNING: BEBOP_DEPRECATED is not supported on this compiler")
+        #endif
+        #define BEBOP_DEPRECATED
+        #define BEBOP_DEPRECATED_MSG(msg)
+      #endif
     #endif
   #endif
   
