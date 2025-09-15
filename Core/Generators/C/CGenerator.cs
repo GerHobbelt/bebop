@@ -31,6 +31,9 @@ public class CGenerator : BaseGenerator
     private static readonly Regex _informationalRegex = new($@"(?<=BEBOPC_VER_INFO\s){BytePattern}",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
+    private HashSet<string> _generatedArrayTypes = new HashSet<string>();
+    private HashSet<string> _generatedMapTypes = new HashSet<string>();
+
     public override string Alias { get => "c"; set => throw new NotImplementedException(); }
     public override string Name { get => "c"; set => throw new NotImplementedException(); }
 
@@ -80,13 +83,11 @@ public class CGenerator : BaseGenerator
         builder.Indent(spaces);
         builder.AppendLine("/**");
 
-        // Add type tag if provided (e.g., @enum, @typedef)
         if (!string.IsNullOrWhiteSpace(typeTag))
         {
             builder.AppendLine($" * {typeTag}");
         }
 
-        // Add brief tag if provided
         if (!string.IsNullOrWhiteSpace(briefTag))
         {
             builder.AppendLine($" * @brief {briefTag}");
@@ -94,7 +95,6 @@ public class CGenerator : BaseGenerator
 
         if (!string.IsNullOrWhiteSpace(documentation))
         {
-            // Add empty line after brief/type tags if we have documentation
             if (!string.IsNullOrWhiteSpace(briefTag) || !string.IsNullOrWhiteSpace(typeTag))
             {
                 builder.AppendLine(" *");
@@ -127,7 +127,6 @@ public class CGenerator : BaseGenerator
         return builder.ToString();
     }
 
-    // Overload for simple member documentation (single line with @brief)
     private static string FormatMemberDocumentation(string? documentation, int spaces, bool isDeprecated = false,
         string? deprecatedReason = null)
     {
@@ -185,9 +184,6 @@ public class CGenerator : BaseGenerator
         return $"{guardName}_H";
     }
 
-    /// <summary>
-    ///     Generate the body of the encode function for the given RecordDefinition.
-    /// </summary>
     private string CompileEncode(RecordDefinition definition)
     {
         return definition switch
@@ -240,15 +236,12 @@ public class CGenerator : BaseGenerator
     {
         var builder = new IndentedStringBuilder(IndentStep);
 
-        // Check if the struct has any fields
         if (definition.Fields.Count == 0)
         {
-            // For empty structs, just return BEBOP_OK directly
             builder.AppendLine("return BEBOP_OK;");
             return builder.ToString();
         }
 
-        // For structs with fields, proceed with normal generation
         builder.AppendLine("bebop_result_t result;");
         builder.AppendLine("");
 
@@ -313,7 +306,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case ArrayType at when IsFixedScalarTypeForBulk(at.MemberType):
-                // Use bulk operations for fixed-size scalar arrays
                 var bulkFunction = GetBulkWriteFunction(at.MemberType);
                 if (bulkFunction != null)
                 {
@@ -322,7 +314,6 @@ public class CGenerator : BaseGenerator
                 }
                 else
                 {
-                    // Fallback to loop for types without specialized bulk functions
                     builder.AppendLine($"result = bebop_writer_write_uint32(writer, (uint32_t){target}.length);");
                     builder.AppendLine("if (result != BEBOP_OK) return result;");
                     builder.AppendLine($"for (size_t {i} = 0; {i} < {target}.length; {i}++) {{");
@@ -335,7 +326,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case ArrayType at:
-                // Use loop-based approach for complex types (strings, structs, etc.)
                 builder.AppendLine($"result = bebop_writer_write_uint32(writer, (uint32_t){target}.length);");
                 builder.AppendLine("if (result != BEBOP_OK) return result;");
                 builder.AppendLine($"for (size_t {i} = 0; {i} < {target}.length; {i}++) {{");
@@ -394,9 +384,6 @@ public class CGenerator : BaseGenerator
         return builder.ToString();
     }
 
-    /// <summary>
-    /// Check if a type is suitable for bulk array operations
-    /// </summary>
     private bool IsFixedScalarTypeForBulk(TypeBase type)
     {
         return type switch
@@ -415,9 +402,6 @@ public class CGenerator : BaseGenerator
         };
     }
 
-    /// <summary>
-    /// Get the specialized bulk write function name for a type
-    /// </summary>
     private string? GetBulkWriteFunction(TypeBase type)
     {
         return type switch
@@ -440,9 +424,6 @@ public class CGenerator : BaseGenerator
         };
     }
 
-    /// <summary>
-    ///     Generate the body of the decode function for the given RecordDefinition.
-    /// </summary>
     private string CompileDecode(RecordDefinition definition)
     {
         return definition switch
@@ -507,22 +488,18 @@ public class CGenerator : BaseGenerator
     {
         var builder = new IndentedStringBuilder(IndentStep);
 
-        // Check if the struct has any fields
         if (definition.Fields.Count == 0)
         {
-            // For empty structs, just return BEBOP_OK directly
             builder.AppendLine("return BEBOP_OK;");
             return builder.ToString();
         }
 
-        // For structs with fields, proceed with normal generation
         builder.AppendLine("bebop_result_t result;");
         builder.AppendLine("");
 
         var fieldIndex = 0;
         foreach (var field in definition.Fields)
         {
-            // Use fieldIndex to ensure unique variable names for each field
             builder.AppendLine(CompileDecodeField(field.Type, $"out_record->{field.Name.ToSnakeCase()}", fieldIndex,
                 0, definition));
             builder.AppendLine("");
@@ -576,7 +553,6 @@ public class CGenerator : BaseGenerator
         var i = GeneratorUtils.LoopVariable(depth);
         var builder = new IndentedStringBuilder(indentDepth);
 
-        // Determine if we need to cast away const for non-mutable structs
         var needsConstCast = parentDefinition is StructDefinition { IsMutable: false };
 
         switch (type)
@@ -588,7 +564,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case ArrayType at when IsFixedScalarType(at.MemberType):
-                // For fixed-size primitive arrays, use zero-copy views
                 builder.AppendLine($"uint32_t length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &length_{depth});");
                 builder.AppendLine("if (result != BEBOP_OK) return result;");
@@ -612,7 +587,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case ArrayType at:
-                // For variable-length elements, allocate and parse each element
                 builder.AppendLine($"uint32_t array_length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &array_length_{depth});");
                 builder.AppendLine("if (result != BEBOP_OK) return result;");
@@ -620,7 +594,6 @@ public class CGenerator : BaseGenerator
                 if (needsConstCast)
                 {
                     var arrayType = GetAllocatedArrayTypeName(at);
-                    // Fix: Add extra parentheses around the cast expressions
                     builder.AppendLine($"(({arrayType}*)&{target})->length = array_length_{depth};");
                     builder.AppendLine($"if (array_length_{depth} > 0) {{");
                     builder.Indent(IndentStep);
@@ -670,7 +643,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case MapType mt when IsFixedScalarType(mt.KeyType) && IsFixedScalarType(mt.ValueType):
-                // For maps with fixed-size keys and values, use zero-copy views
                 builder.AppendLine($"uint32_t map_length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &map_length_{depth});");
                 builder.AppendLine("if (result != BEBOP_OK) return result;");
@@ -678,7 +650,6 @@ public class CGenerator : BaseGenerator
                 if (needsConstCast)
                 {
                     var mapType = GetMapTypeName(mt);
-                    // Fix: Add extra parentheses around the cast expressions
                     builder.AppendLine($"(({mapType}*)&{target})->length = map_length_{depth};");
                     builder.AppendLine(
                         $"(({mapType}*)&{target})->entries = ({GetMapEntryTypeName(mt)}*)bebop_reader_position(reader);");
@@ -695,7 +666,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case MapType mt:
-                // For maps with variable-length data, allocate and parse each entry
                 builder.AppendLine($"uint32_t map_length_{depth};");
                 builder.AppendLine($"result = bebop_reader_read_uint32(reader, &map_length_{depth});");
                 builder.AppendLine("if (result != BEBOP_OK) return result;");
@@ -703,7 +673,6 @@ public class CGenerator : BaseGenerator
                 if (needsConstCast)
                 {
                     var mapType = GetAllocatedMapTypeName(mt);
-                    // Fix: Add extra parentheses around the cast expressions
                     builder.AppendLine($"(({mapType}*)&{target})->length = map_length_{depth};");
                     builder.AppendLine($"if (map_length_{depth} > 0) {{");
                     builder.Indent(IndentStep);
@@ -756,7 +725,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case ScalarType st:
-                // Handle const casting for scalar types
                 var scalarTarget = needsConstCast ? GetConstCastTarget(st, target) : $"&{target}";
                 var call = st.BaseType switch
                 {
@@ -780,7 +748,6 @@ public class CGenerator : BaseGenerator
                 break;
 
             case DefinedType dt when Schema.Definitions[dt.Name] is EnumDefinition ed:
-                // For enums, read directly into the target with const casting if needed
                 var enumTarget = needsConstCast ? GetEnumConstCastTarget(ed, target) : $"&{target}";
                 var underlyingCall = ed.ScalarType.BaseType switch
                 {
@@ -813,9 +780,6 @@ public class CGenerator : BaseGenerator
         return builder.ToString();
     }
 
-    /// <summary>
-    ///     Get the appropriate const cast target for scalar types
-    /// </summary>
     private static string GetConstCastTarget(ScalarType st, string target)
     {
         return st.BaseType switch
@@ -837,9 +801,6 @@ public class CGenerator : BaseGenerator
         };
     }
 
-    /// <summary>
-    ///     Get the appropriate const cast target for enum types
-    /// </summary>
     private static string GetEnumConstCastTarget(EnumDefinition ed, string target)
     {
         return ed.ScalarType.BaseType switch
@@ -855,9 +816,6 @@ public class CGenerator : BaseGenerator
         };
     }
 
-    /// <summary>
-    ///     Generate a C type name for the given TypeBase.
-    /// </summary>
     private string GetCTypeName(TypeBase type)
     {
         return type switch
@@ -889,18 +847,12 @@ public class CGenerator : BaseGenerator
         };
     }
 
-    /// <summary>
-    ///     Get the C type name for message fields (wrapped in optional)
-    /// </summary>
     private string GetMessageFieldTypeName(TypeBase type)
     {
         var baseTypeName = GetCTypeName(type);
         return $"bebop_optional({baseTypeName})";
     }
 
-    /// <summary>
-    ///     Get the C type name for struct fields, with const modifier if the struct is not mutable
-    /// </summary>
     private string GetStructFieldTypeName(TypeBase type, bool isMutable)
     {
         var baseTypeName = GetCTypeName(type);
@@ -911,7 +863,6 @@ public class CGenerator : BaseGenerator
     {
         var memberTypeName = GetCTypeName(arrayType.MemberType);
 
-        // Map C types to array type names
         return memberTypeName switch
         {
             "uint8_t" => "bebop_uint8_array_view_t",
@@ -934,7 +885,6 @@ public class CGenerator : BaseGenerator
     {
         var memberTypeName = GetCTypeName(arrayType.MemberType);
 
-        // Map C types to allocated array type names
         return memberTypeName switch
         {
             "uint8_t" => "bebop_uint8_array_t",
@@ -1001,20 +951,18 @@ public class CGenerator : BaseGenerator
         };
     }
 
-    /// <summary>
-    ///     Generate code for a Bebop schema.
-    /// </summary>
     public override ValueTask<Artifact[]> Compile(BebopSchema schema, GeneratorConfig config,
         CancellationToken cancellationToken = default)
     {
         var artifacts = new List<Artifact>();
         Schema = schema;
         Config = config;
+        _generatedArrayTypes.Clear();
+        _generatedMapTypes.Clear();
 
         var headerBuilder = new IndentedStringBuilder();
         var sourceBuilder = new IndentedStringBuilder();
 
-        // Header file
         if (Config.EmitNotice)
         {
             headerBuilder.AppendLine("/* Auto-generated by bebop compiler */");
@@ -1039,7 +987,6 @@ public class CGenerator : BaseGenerator
             headerBuilder.AppendLine();
         }
 
-        // Source file
         if (Config.EmitNotice)
         {
             sourceBuilder.AppendLine("/* Auto-generated by bebop compiler */");
@@ -1049,8 +996,9 @@ public class CGenerator : BaseGenerator
         sourceBuilder.AppendLine("#include <string.h>");
         sourceBuilder.AppendLine("");
 
-        // Generate definitions in proper order using topological sort
         var sortedDefinitions = Schema.SortedDefinitions();
+
+        GenerateGlobalArrayMapTypes(headerBuilder, schema);
 
         var recordDefinitions = sortedDefinitions.OfType<RecordDefinition>().ToList();
         if (recordDefinitions.Any())
@@ -1059,7 +1007,6 @@ public class CGenerator : BaseGenerator
             {
                 foreach (var definition in recordDefinitions)
                 {
-                    // Check for deprecated decorator on the record definition itself
                     var isRecordDeprecated = definition.DeprecatedDecorator != null;
 
                     var recordDeprecatedReason = isRecordDeprecated &&
@@ -1069,7 +1016,6 @@ public class CGenerator : BaseGenerator
                         ? recordReason
                         : null;
 
-                    // Generate documentation for the forward declaration
                     var typeTag = $"@typedef {GetStructTypeName(definition)}";
                     var briefTag = $"Opaque handle to a {definition.Name.ToSnakeCase()} object.";
 
@@ -1093,13 +1039,11 @@ public class CGenerator : BaseGenerator
                     GenerateUnionTagEnum(regionBuilder, unionDef);
                 }
 
-                // Then generate regular enums and constants
                 foreach (var definition in enumsAndConstants)
                 {
                     switch (definition)
                     {
                         case EnumDefinition ed:
-                            // Check for deprecated decorator on the enum itself
                             var isEnumDeprecated = ed.DeprecatedDecorator != null;
                             var enumDeprecatedReason = isEnumDeprecated && ed.DeprecatedDecorator != null &&
                                                        ed.DeprecatedDecorator.TryGetValue("reason",
@@ -1119,14 +1063,12 @@ public class CGenerator : BaseGenerator
                             GenerateConst(regionBuilder, cd);
                             break;
                         case ServiceDefinition:
-                            // Skip services for C
                             break;
                     }
                 }
             }, FormatRegionEnd());
         }
 
-        // Step 3: Generate struct definitions and their array/map types in dependency order
         if (recordDefinitions.Any())
         {
             headerBuilder.RegionBlock(FormatRegionStart("Record Definitions"), 0, regionBuilder =>
@@ -1135,15 +1077,12 @@ public class CGenerator : BaseGenerator
                 {
                     GenerateStructDefinitionOnly(regionBuilder, definition);
 
-                    // Then generate array/map types that depend on this struct
                     GenerateArrayMapTypesForStruct(regionBuilder, definition);
 
-                    // Finally generate function declarations
                     GenerateFunctionDeclarations(regionBuilder, definition);
                 }
             }, FormatRegionEnd());
 
-            // Generate function implementations in source file
             sourceBuilder.RegionBlock(FormatRegionStart("Function Implementations"), 0, regionBuilder =>
             {
                 foreach (var definition in recordDefinitions)
@@ -1155,17 +1094,14 @@ public class CGenerator : BaseGenerator
             }, FormatRegionEnd());
         }
 
-        // Generate constant implementations in source file
         GenerateConstImplementations(sourceBuilder, schema);
 
-        // Close namespace region if applicable
         if (!string.IsNullOrWhiteSpace(Config.Namespace))
         {
             headerBuilder.AppendLine(FormatRegionEnd());
             headerBuilder.AppendLine();
         }
 
-        // Close header guard
         headerBuilder.AppendLine("#ifdef __cplusplus");
         headerBuilder.AppendLine("}");
         headerBuilder.AppendLine("#endif");
@@ -1173,8 +1109,6 @@ public class CGenerator : BaseGenerator
         headerBuilder.AppendLine($"#endif /* {headerGuard} */");
         headerBuilder.AppendLine();
 
-
-        // Create artifacts
         artifacts.Add(new Artifact(headerFileName, headerBuilder.TrimEnd().AppendLine().Encode()));
 
         var sourceFileName = Path.ChangeExtension(config.OutFile, ".c");
@@ -1190,6 +1124,131 @@ public class CGenerator : BaseGenerator
         }
 
         return ValueTask.FromResult(artifacts.ToArray());
+    }
+
+    private void GenerateGlobalArrayMapTypes(IndentedStringBuilder headerBuilder, BebopSchema schema)
+    {
+        var arrayDeclarations = new HashSet<string>();
+        var mapDeclarations = new HashSet<string>();
+
+        foreach (var definition in schema.Definitions.Values)
+        {
+            if (definition is RecordDefinition rd)
+            {
+                CollectPrimitiveArrayMapTypes(rd, arrayDeclarations, mapDeclarations);
+            }
+        }
+
+        if (arrayDeclarations.Count > 0 || mapDeclarations.Count > 0)
+        {
+            headerBuilder.RegionBlock(FormatRegionStart("Array and Map Type Declarations"), 0, regionBuilder =>
+            {
+                foreach (var arrayDecl in arrayDeclarations.OrderBy(x => x))
+                {
+                    if (!_generatedArrayTypes.Contains(arrayDecl))
+                    {
+                        regionBuilder.AppendLine(arrayDecl);
+                        _generatedArrayTypes.Add(arrayDecl);
+                    }
+                }
+
+                if (arrayDeclarations.Count > 0 && mapDeclarations.Count > 0)
+                {
+                    regionBuilder.AppendLine("");
+                }
+
+                foreach (var mapDecl in mapDeclarations.OrderBy(x => x))
+                {
+                    if (!_generatedMapTypes.Contains(mapDecl))
+                    {
+                        regionBuilder.AppendLine(mapDecl);
+                        _generatedMapTypes.Add(mapDecl);
+                    }
+                }
+            }, FormatRegionEnd());
+
+            headerBuilder.AppendLine("");
+        }
+    }
+
+    private void CollectPrimitiveArrayMapTypes(RecordDefinition definition, HashSet<string> arrayDeclarations,
+        HashSet<string> mapDeclarations)
+    {
+        if (definition is FieldsDefinition fd)
+        {
+            foreach (var field in fd.Fields)
+            {
+                CollectPrimitiveTypesRecursively(field.Type, arrayDeclarations, mapDeclarations);
+            }
+        }
+        else if (definition is UnionDefinition ud)
+        {
+            foreach (var branch in ud.Branches)
+            {
+                CollectPrimitiveArrayMapTypes(branch.Definition, arrayDeclarations, mapDeclarations);
+            }
+        }
+    }
+
+    private void CollectPrimitiveTypesRecursively(TypeBase type, HashSet<string> arrayDeclarations,
+    HashSet<string> mapDeclarations)
+    {
+        switch (type)
+        {
+            case ArrayType at when !at.IsBytes():
+                // Only generate for non-struct types here
+                if (at.MemberType is ScalarType || (at.MemberType is DefinedType adt && Schema.Definitions[adt.Name] is EnumDefinition))
+                {
+                    var memberTypeName = GetCTypeName(at.MemberType).Replace("_t", "").Replace("bebop_", "");
+                    if (memberTypeName == "string_view")
+                    {
+                        arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_ALLOC({memberTypeName}, bebop_string_view_t);");
+                    }
+                    else if (IsFixedScalarType(at.MemberType))
+                    {
+                        arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_VIEW({memberTypeName}, {GetCTypeName(at.MemberType)});");
+                    }
+                }
+                CollectPrimitiveTypesRecursively(at.MemberType, arrayDeclarations, mapDeclarations);
+                break;
+
+            case MapType mt:
+                // Only generate for non-struct types here
+                bool keyIsStruct = mt.KeyType is DefinedType kdt && Schema.Definitions[kdt.Name] is RecordDefinition;
+                bool valueIsStruct = mt.ValueType is DefinedType vdt && Schema.Definitions[vdt.Name] is RecordDefinition;
+
+                if (!keyIsStruct && !valueIsStruct)
+                {
+                    var keyTypeName = GetCTypeName(mt.KeyType).Replace("_t", "").Replace("bebop_", "");
+                    var valueTypeName = GetCTypeName(mt.ValueType).Replace("_t", "").Replace("bebop_", "");
+
+                    if (keyTypeName == "string_view" && valueTypeName == "string_view")
+                    {
+                        mapDeclarations.Add(
+                            $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, bebop_string_view_t, {valueTypeName}, bebop_string_view_t);");
+                    }
+                    else if (IsFixedScalarType(mt.KeyType) && IsFixedScalarType(mt.ValueType))
+                    {
+                        mapDeclarations.Add(
+                            $"BEBOP_DECLARE_MAP_VIEW({keyTypeName}, {GetCTypeName(mt.KeyType)}, {valueTypeName}, {GetCTypeName(mt.ValueType)});");
+                    }
+                    else
+                    {
+                        var keyType = keyTypeName == "string_view" ? "bebop_string_view_t" : GetCTypeName(mt.KeyType);
+                        var valueType = valueTypeName == "string_view" ? "bebop_string_view_t" : GetCTypeName(mt.ValueType);
+                        mapDeclarations.Add(
+                            $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, {keyType}, {valueTypeName}, {valueType});");
+                    }
+                }
+
+                CollectPrimitiveTypesRecursively(mt.KeyType, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveTypesRecursively(mt.ValueType, arrayDeclarations, mapDeclarations);
+                break;
+
+            case DefinedType dt:
+                // Don't recurse into struct definitions from the global scope
+                break;
+        }
     }
 
     private static List<Artifact>? GetRuntime()
