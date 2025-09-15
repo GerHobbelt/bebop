@@ -1191,13 +1191,13 @@ public class CGenerator : BaseGenerator
     }
 
     private void CollectPrimitiveTypesRecursively(TypeBase type, HashSet<string> arrayDeclarations,
-        HashSet<string> mapDeclarations)
+    HashSet<string> mapDeclarations)
     {
         switch (type)
         {
             case ArrayType at when !at.IsBytes():
                 // Only generate for non-struct types here
-                if (at.MemberType is ScalarType || (at.MemberType is DefinedType dt && Schema.Definitions[dt.Name] is EnumDefinition))
+                if (at.MemberType is ScalarType || (at.MemberType is DefinedType adt && Schema.Definitions[adt.Name] is EnumDefinition))
                 {
                     var memberTypeName = GetCTypeName(at.MemberType).Replace("_t", "").Replace("bebop_", "");
                     if (memberTypeName == "string_view")
@@ -1250,7 +1250,7 @@ public class CGenerator : BaseGenerator
                 break;
         }
     }
-    
+
     private static List<Artifact>? GetRuntime()
     {
         var assembly = Assembly.GetEntryAssembly()!;
