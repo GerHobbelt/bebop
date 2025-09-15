@@ -1135,7 +1135,7 @@ public class CGenerator : BaseGenerator
         {
             if (definition is RecordDefinition rd)
             {
-                CollectAllArrayMapTypes(rd, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveArrayMapTypes(rd, arrayDeclarations, mapDeclarations);
             }
         }
 
@@ -1171,84 +1171,86 @@ public class CGenerator : BaseGenerator
         }
     }
 
-    private void CollectAllArrayMapTypes(RecordDefinition definition, HashSet<string> arrayDeclarations,
+    private void CollectPrimitiveArrayMapTypes(RecordDefinition definition, HashSet<string> arrayDeclarations,
         HashSet<string> mapDeclarations)
     {
         if (definition is FieldsDefinition fd)
         {
             foreach (var field in fd.Fields)
             {
-                CollectTypesRecursively(field.Type, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveTypesRecursively(field.Type, arrayDeclarations, mapDeclarations);
             }
         }
         else if (definition is UnionDefinition ud)
         {
             foreach (var branch in ud.Branches)
             {
-                CollectAllArrayMapTypes(branch.Definition, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveArrayMapTypes(branch.Definition, arrayDeclarations, mapDeclarations);
             }
         }
     }
 
-    private void CollectTypesRecursively(TypeBase type, HashSet<string> arrayDeclarations,
+    private void CollectPrimitiveTypesRecursively(TypeBase type, HashSet<string> arrayDeclarations,
         HashSet<string> mapDeclarations)
     {
         switch (type)
         {
             case ArrayType at when !at.IsBytes():
-                var memberTypeName = GetCTypeName(at.MemberType).Replace("_t", "").Replace("bebop_", "");
-
-                if (memberTypeName == "string_view")
+                // Only generate for non-struct types here
+                if (at.MemberType is ScalarType || (at.MemberType is DefinedType dt && Schema.Definitions[dt.Name] is EnumDefinition))
                 {
-                    arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_ALLOC({memberTypeName}, bebop_string_view_t);");
+                    var memberTypeName = GetCTypeName(at.MemberType).Replace("_t", "").Replace("bebop_", "");
+                    if (memberTypeName == "string_view")
+                    {
+                        arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_ALLOC({memberTypeName}, bebop_string_view_t);");
+                    }
+                    else if (IsFixedScalarType(at.MemberType))
+                    {
+                        arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_VIEW({memberTypeName}, {GetCTypeName(at.MemberType)});");
+                    }
                 }
-                else if (IsFixedScalarType(at.MemberType))
-                {
-                    arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_VIEW({memberTypeName}, {GetCTypeName(at.MemberType)});");
-                }
-                else
-                {
-                    arrayDeclarations.Add($"BEBOP_DECLARE_ARRAY_ALLOC({memberTypeName}, {GetCTypeName(at.MemberType)});");
-                }
-
-                CollectTypesRecursively(at.MemberType, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveTypesRecursively(at.MemberType, arrayDeclarations, mapDeclarations);
                 break;
 
             case MapType mt:
-                var keyTypeName = GetCTypeName(mt.KeyType).Replace("_t", "").Replace("bebop_", "");
-                var valueTypeName = GetCTypeName(mt.ValueType).Replace("_t", "").Replace("bebop_", "");
+                // Only generate for non-struct types here
+                bool keyIsStruct = mt.KeyType is DefinedType kdt && Schema.Definitions[kdt.Name] is RecordDefinition;
+                bool valueIsStruct = mt.ValueType is DefinedType vdt && Schema.Definitions[vdt.Name] is RecordDefinition;
 
-                if (keyTypeName == "string_view" && valueTypeName == "string_view")
+                if (!keyIsStruct && !valueIsStruct)
                 {
-                    mapDeclarations.Add(
-                        $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, bebop_string_view_t, {valueTypeName}, bebop_string_view_t);");
-                }
-                else if (IsFixedScalarType(mt.KeyType) && IsFixedScalarType(mt.ValueType))
-                {
-                    mapDeclarations.Add(
-                        $"BEBOP_DECLARE_MAP_VIEW({keyTypeName}, {GetCTypeName(mt.KeyType)}, {valueTypeName}, {GetCTypeName(mt.ValueType)});");
-                }
-                else
-                {
-                    var keyType = keyTypeName == "string_view" ? "bebop_string_view_t" : GetCTypeName(mt.KeyType);
-                    var valueType = valueTypeName == "string_view" ? "bebop_string_view_t" : GetCTypeName(mt.ValueType);
-                    mapDeclarations.Add(
-                        $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, {keyType}, {valueTypeName}, {valueType});");
+                    var keyTypeName = GetCTypeName(mt.KeyType).Replace("_t", "").Replace("bebop_", "");
+                    var valueTypeName = GetCTypeName(mt.ValueType).Replace("_t", "").Replace("bebop_", "");
+
+                    if (keyTypeName == "string_view" && valueTypeName == "string_view")
+                    {
+                        mapDeclarations.Add(
+                            $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, bebop_string_view_t, {valueTypeName}, bebop_string_view_t);");
+                    }
+                    else if (IsFixedScalarType(mt.KeyType) && IsFixedScalarType(mt.ValueType))
+                    {
+                        mapDeclarations.Add(
+                            $"BEBOP_DECLARE_MAP_VIEW({keyTypeName}, {GetCTypeName(mt.KeyType)}, {valueTypeName}, {GetCTypeName(mt.ValueType)});");
+                    }
+                    else
+                    {
+                        var keyType = keyTypeName == "string_view" ? "bebop_string_view_t" : GetCTypeName(mt.KeyType);
+                        var valueType = valueTypeName == "string_view" ? "bebop_string_view_t" : GetCTypeName(mt.ValueType);
+                        mapDeclarations.Add(
+                            $"BEBOP_DECLARE_MAP_ALLOC({keyTypeName}, {keyType}, {valueTypeName}, {valueType});");
+                    }
                 }
 
-                CollectTypesRecursively(mt.KeyType, arrayDeclarations, mapDeclarations);
-                CollectTypesRecursively(mt.ValueType, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveTypesRecursively(mt.KeyType, arrayDeclarations, mapDeclarations);
+                CollectPrimitiveTypesRecursively(mt.ValueType, arrayDeclarations, mapDeclarations);
                 break;
 
             case DefinedType dt:
-                if (Schema.Definitions.TryGetValue(dt.Name, out var definition) && definition is RecordDefinition rd)
-                {
-                    CollectAllArrayMapTypes(rd, arrayDeclarations, mapDeclarations);
-                }
+                // Don't recurse into struct definitions from the global scope
                 break;
         }
     }
-
+    
     private static List<Artifact>? GetRuntime()
     {
         var assembly = Assembly.GetEntryAssembly()!;
