@@ -515,14 +515,41 @@ namespace Core.Parser
                 case ScalarType st when st.BaseType == BaseType.Date:
                     throw new UnsupportedConstTypeException("Date-type constant definitions are not supported.", type.Span);
                 case ScalarType st when st.IsFloat:
+                    if (EatEnvironmentVariable(out var floatEnvValue))
+                    {
+                        if (!_reFloat.IsMatch(floatEnvValue))
+                        {
+                            _errors.Add(new InvalidLiteralException(token, st));
+                            return new FloatLiteral(st, token.Span, "0");
+                        }
+                        return new FloatLiteral(st, token.Span, floatEnvValue);
+                    }
                     var (floatSpan, floatLexeme) = ParseNumberLiteral();
                     if (!_reFloat.IsMatch(floatLexeme)) throw new InvalidLiteralException(token, st);
                     return new FloatLiteral(st, floatSpan, floatLexeme);
                 case ScalarType st when st.IsInteger:
+                    if (EatEnvironmentVariable(out var intEnvValue))
+                    {
+                        if (!st.BaseType.IsAssignableFrom(intEnvValue))
+                        {
+                            _errors.Add(new InvalidLiteralException(token, st));
+                            return new IntegerLiteral(st, token.Span, "0");
+                        }
+                        return new IntegerLiteral(st, token.Span, intEnvValue);
+                    }
                     var (intSpan, intLexeme) = ParseNumberLiteral();
                     if (!st.BaseType.IsAssignableFrom(intLexeme)) throw new InvalidLiteralException(token, st);
                     return new IntegerLiteral(st, intSpan, intLexeme);
                 case ScalarType st when st.BaseType == BaseType.Bool:
+                    if (EatEnvironmentVariable(out var boolEnvValue))
+                    {
+                        if (bool.TryParse(boolEnvValue, out var boolValue))
+                        {
+                            return new BoolLiteral(st, token.Span, boolValue);
+                        }
+                        _errors.Add(new InvalidLiteralException(token, st));
+                        return new BoolLiteral(st, token.Span, false);
+                    }
                     if (Eat(TokenKind.True)) return new BoolLiteral(st, token.Span, true);
                     if (Eat(TokenKind.False)) return new BoolLiteral(st, token.Span, false);
                     throw new InvalidLiteralException(token, st);
@@ -548,7 +575,6 @@ namespace Core.Parser
                     throw new UnsupportedConstTypeException($"Constant definitions for type {type.AsString} are not supported.", type.Span);
             }
         }
-
         /// <summary>
         /// Consumes all the tokens belonging to a decorator
         /// </summary>
